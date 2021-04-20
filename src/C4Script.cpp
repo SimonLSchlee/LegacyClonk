@@ -41,6 +41,7 @@
 
 #include <array>
 #include <cinttypes>
+#include <numbers>
 #include <optional>
 #include <type_traits>
 #include <utility>
@@ -3228,7 +3229,7 @@ static C4ValueInt FnAngle(C4AulContext *cthr, C4ValueInt iX1, C4ValueInt iY1, C4
 	if (!dx) if (dy > 0) return 180 * iPrec; else return 0;
 	if (!dy) if (dx > 0) return 90 * iPrec; else return 270 * iPrec;
 
-	iAngle = static_cast<C4ValueInt>(180.0 * iPrec * atan2(static_cast<double>(Abs(dy)), static_cast<double>(Abs(dx))) / M_PI);
+	iAngle = static_cast<C4ValueInt>(180.0 * iPrec * atan2(static_cast<double>(Abs(dy)), static_cast<double>(Abs(dx))) / std::numbers::pi);
 
 	if (iX2 > iX1)
 	{
@@ -3251,7 +3252,7 @@ static C4ValueInt FnArcSin(C4AulContext *cthr, C4ValueInt iVal, C4ValueInt iRadi
 	if (iVal > iRadius) return 0;
 	// calc arcsin
 	double f1 = iVal;
-	f1 = asin(f1 / iRadius) * 180.0 / M_PI;
+	f1 = asin(f1 / iRadius) * 180.0 / std::numbers::pi;
 	// return rounded angle
 	return static_cast<C4ValueInt>(floor(f1 + 0.5));
 }
@@ -3263,7 +3264,7 @@ static C4ValueInt FnArcCos(C4AulContext *cthr, C4ValueInt iVal, C4ValueInt iRadi
 	if (iVal > iRadius) return 0;
 	// calc arccos
 	double f1 = iVal;
-	f1 = acos(f1 / iRadius) * 180.0 / M_PI;
+	f1 = acos(f1 / iRadius) * 180.0 / std::numbers::pi;
 	// return rounded angle
 	return static_cast<C4ValueInt>(floor(f1 + 0.5));
 }
