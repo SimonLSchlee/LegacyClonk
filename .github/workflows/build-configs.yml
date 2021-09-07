@@ -64,6 +64,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
+        with:
+          submodules: recursive
 
       - name: "Configure Platform"
         run: |
@@ -133,4 +135,3 @@ jobs:
       - name: Build
         run: |
           $CHROOT cmake --build build -v $CMAKE_BUILD_ARGS
-
