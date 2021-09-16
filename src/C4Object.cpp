@@ -2694,6 +2694,40 @@ void C4Object::DrawBreath(C4Facet &cgo)
 	cgo.DrawEnergyLevelEx(Breath, GetPhysical()->Breath, Game.GraphicsResource.fctEnergyBars, 2);
 }
 
+int32_t C4Object::DrawCustomEnergyBars(C4Facet &cgo, const char *szKey, int32_t advance)
+{
+  C4Value *custombars_definition = LocalNamed.GetItem("__CUSTOM_EnergyBars");
+  if(!custombars_def) return 0;
+
+  C4Value key(String(szKey));
+  C4Value prop_visible(String("visible"));
+  C4Value prop_value(String("value"));
+  C4Value prop_max(String("max"));
+  C4Value prop_id(String("id"));
+  C4Value prop_index(String("index"));
+
+	// TODO missing check for null / key not available
+  C4Value* section = custombars_definition->getMap()[key];
+  C4ValueArray* elements = section->GetArray();
+
+	int32_t result = 0;
+  const C4ValueArray &data = *elements;
+  for (int i = 0; i < data.GetSize(); ++i) {
+		C4ValueHash* bar_def = data[i].getMap();
+		bool visible = bar_def[prop_visible]->getBool();
+		if(!visible) continue;
+
+		C4Value* value = bar_def[prop_value];
+		C4Value* max   = bar_def[prop_max];
+		C4Value* id    = bar_def[prop_id];
+		C4Value* index = bar_def[prop_index];
+		const C4Facet &gfx = getFacetFromID(id);
+		cgo.DrawEnergyLevelEx(value, max, gfx, index);
+		result += advance;
+  }
+	return result;
+}
+
 void C4Object::CompileFunc(StdCompiler *pComp)
 {
 	bool fCompiler = pComp->isCompiler();

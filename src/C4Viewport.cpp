@@ -940,22 +940,36 @@ void C4Viewport::DrawCursorInfo(C4FacetEx &cgo)
 			C4ST_STARTNEW(EnStat, "C4Viewport::DrawCursorInfo: Energy")
 			int32_t bar_wdt = Game.GraphicsResource.fctEnergyBars.Wdt;
 			int32_t iYOff = Config.Graphics.ShowPortraits ? 10 : 0;
-			// Energy
+
 			ccgo.Set(cgo.Surface, cgo.X + cx, cgo.Y + C4SymbolSize + 2 * C4SymbolBorder + iYOff, bar_wdt, cgo.Hgt - 3 * C4SymbolBorder - 2 * C4SymbolSize - iYOff);
+
+      int32_t advance = bar_wdt + 1;
+      ccgo.X += cursor->DrawCustomEnergyBars(ccgo, "beforeEnergy", advance);
+
+			// Energy
 			if (!(cursor->Def->HideHUDBars & C4DefCore::HB_Energy))
 			{
 				cursor->DrawEnergy(ccgo); ccgo.X += bar_wdt + 1;
 			}
+
+      ccgo.X += cursor->DrawCustomEnergyBars(ccgo, "afterEnergy", advance);
+
 			// Magic energy
 			if (cursor->MagicEnergy && !(cursor->Def->HideHUDBars & C4DefCore::HB_MagicEnergy))
 			{
 				cursor->DrawMagicEnergy(ccgo); ccgo.X += bar_wdt + 1;
 			}
+
+      ccgo.X += cursor->DrawCustomEnergyBars(ccgo, "afterMagic", advance);
+
 			// Breath
 			if (cursor->Breath && (cursor->Breath < cursor->GetPhysical()->Breath) && !(cursor->Def->HideHUDBars & C4DefCore::HB_Breath))
 			{
 				cursor->DrawBreath(ccgo); ccgo.X += bar_wdt + 1;
 			}
+
+      ccgo.X += cursor->DrawCustomEnergyBars(ccgo, "afterBreath", advance);
+
 			C4ST_STOP(EnStat)
 		}
 

@@ -257,6 +257,7 @@ public:
 	void DrawEnergy(C4Facet &cgo);
 	void DrawMagicEnergy(C4Facet &cgo);
 	void DrawBreath(C4Facet &cgo);
+	int32_t DrawCustomEnergyBars(C4Facet &cgo, const char *szKey, int32_t advance);
 	void DrawLine(C4FacetEx &cgo);
 	void DrawCommands(C4Facet &cgo, C4Facet &cgo2, C4RegionList *pRegions);
 	void DrawCommand(C4Facet &cgoBar, int32_t iAlign, const char *szFunctionFormat,
