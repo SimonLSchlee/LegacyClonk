@@ -17,6 +17,7 @@
 /* That which fills the world with life */
 
 #include <C4Include.h>
+#include <C4EnergyBars.h>
 #include <C4Object.h>
 #include <C4Version.h>
 
@@ -25,6 +26,8 @@
 #include <C4ObjectCom.h>
 #include <C4Command.h>
 #include <C4Viewport.h>
+#include <C4Value.h>
+#include <C4ValueHash.h>
 #ifdef DEBUGREC
 #include <C4Record.h>
 #endif
@@ -145,6 +148,7 @@ void C4Object::Default()
 	FirstRef = nullptr;
 	pGfxOverlay = nullptr;
 	iLastAttachMovementFrame = -1;
+	pEnergyBars = Game.EnergyBars.DefaultBars();
 }
 
 bool C4Object::Init(C4Def *pDef, C4Object *pCreator,
@@ -2678,55 +2682,122 @@ void C4Object::DrawLine(C4FacetEx &cgo)
 	FinishedDrawing();
 }
 
-void C4Object::DrawEnergy(C4Facet &cgo)
+bool C4Object::DefineEnergyBars(C4ValueHash* graphics, C4ValueArray *definition)
 {
-	cgo.DrawEnergyLevelEx(Energy, GetPhysical()->Energy, Game.GraphicsResource.fctEnergyBars, 0);
+	// If null pointer is given restore default energy bars
+	if (!graphics || !definition) {
+		pEnergyBars = Game.EnergyBars.DefaultBars();
+		return true;
+	}
+
+	auto bars = Game.EnergyBars.DefineEnergyBars(graphics, definition);
+	if (bars != nullptr) {
+		pEnergyBars = bars;
+		return true;
+	}
+	return false;
 }
 
-void C4Object::DrawMagicEnergy(C4Facet &cgo)
+void C4Object::SetEnergyBar(const char* name, int32_t value, int32_t max)
 {
-	// draw in units of MagicPhysicalFactor, so you can get a full magic energy bar by script even if partial magic energy training is not fulfilled
-	cgo.DrawEnergyLevelEx(MagicEnergy / MagicPhysicalFactor, GetPhysical()->Magic / MagicPhysicalFactor, Game.GraphicsResource.fctEnergyBars, 1);
+	pEnergyBars->SetEnergyBar(name, value, max);
 }
 
-void C4Object::DrawBreath(C4Facet &cgo)
+void C4Object::DrawEnergyBars(C4Facet &cgo)
 {
-	cgo.DrawEnergyLevelEx(Breath, GetPhysical()->Breath, Game.GraphicsResource.fctEnergyBars, 2);
+	pEnergyBars->DrawEnergyBars(cgo, *this);
 }
 
-int32_t C4Object::DrawCustomEnergyBars(C4Facet &cgo, const char *szKey, int32_t advance)
-{
-  C4Value *custombars_definition = LocalNamed.GetItem("__CUSTOM_EnergyBars");
-  if(!custombars_def) return 0;
+// void C4Object::DrawCustomEnergyBars(C4Facet &cgo, const char *szKey)
+// {
+// 	C4Value *custombars_definition = LocalNamed.GetItem("__CUSTOM_EnergyBars");
+// 	if(!custombars_definition) return; // Object has no custom energy bars
 
-  C4Value key(String(szKey));
-  C4Value prop_visible(String("visible"));
-  C4Value prop_value(String("value"));
-  C4Value prop_max(String("max"));
-  C4Value prop_id(String("id"));
-  C4Value prop_index(String("index"));
+// 	// Log("has __CUSTOM_EnergyBars");
 
-	// TODO missing check for null / key not available
-  C4Value* section = custombars_definition->getMap()[key];
-  C4ValueArray* elements = section->GetArray();
+// 	auto *def = custombars_definition->getMap();
+// 	if(!def) return;
 
-	int32_t result = 0;
-  const C4ValueArray &data = *elements;
-  for (int i = 0; i < data.GetSize(); ++i) {
-		C4ValueHash* bar_def = data[i].getMap();
-		bool visible = bar_def[prop_visible]->getBool();
-		if(!visible) continue;
+// 	// Log("has def");
 
-		C4Value* value = bar_def[prop_value];
-		C4Value* max   = bar_def[prop_max];
-		C4Value* id    = bar_def[prop_id];
-		C4Value* index = bar_def[prop_index];
-		const C4Facet &gfx = getFacetFromID(id);
-		cgo.DrawEnergyLevelEx(value, max, gfx, index);
-		result += advance;
-  }
-	return result;
-}
+// 	// access the group of energy bars we are currently drawing
+// 	C4Value key     = C4VString(szKey);
+// 	C4Value section = (*def)[key];
+// 	if(section == C4VNull) {
+// 		LogF("__CUSTOM_EnergyBars invalid key: %s available keys: beforeEnergy, afterEnergy, afterMagic, afterBreath", szKey);
+// 		return;
+// 	}
+
+// 	auto* elements = section.getArray();
+// 	if(!elements) return;
+// 	const C4ValueArray &data = *elements;
+
+// 	C4Value prop_id       = C4VString("id");
+// 	C4Value prop_index    = C4VString("index");
+// 	C4Value prop_visible  = C4VString("visible");
+// 	C4Value prop_value    = C4VString("value");
+// 	C4Value prop_max      = C4VString("max");
+// 	C4Value prop_physical = C4VString("physical");
+// 	C4Value prop_offset   = C4VString("offset");
+
+// 	int32_t result = 0;
+// 	for (int i = 0; i < data.GetSize(); ++i) {
+// 		auto *bar_def = data[i].getMap();
+// 		if(!bar_def) {
+// 			// TODO log message
+// 			Log("__CUSTOM_EnergyBars expected a map but got something else");
+// 			continue;
+// 		}
+// 		// Log("has bar def");
+// 		bool visible = (*bar_def)[prop_visible].getBool();
+// 		if(!visible) continue;
+
+// 		C4Value id       = (*bar_def)[prop_id];
+// 		C4Value index    = (*bar_def)[prop_index];
+// 		C4Value value    = (*bar_def)[prop_value];
+// 		C4Value max      = (*bar_def)[prop_max];
+// 		C4Value physical = (*bar_def)[prop_physical];
+
+// 		C4ID _id = id.getC4ID();
+// 		C4Def *pDef = C4Id2Def(_id);
+// 		if (!pDef) {
+// 			LogF("__CUSTOM_EnergyBars energy bar definition %s not loaded, skipping", id.GetDataString().getData());
+// 		  continue;
+// 		}
+
+// 		C4ValueInt _value = 0;
+// 		C4ValueInt _max   = 0;
+// 		switch (physical.GetType()) {
+// 		case C4V_Any:
+// 			_value = value.getInt();
+// 			_max   = max.getInt();
+// 			break;
+// 		case C4V_String:
+// 			if(physical == C4VString("Energy"))      {_value = Energy; _max = GetPhysical()->Energy; break;}
+// 			else if(physical == C4VString("Magic"))  {_value = MagicEnergy / MagicPhysicalFactor; _max = GetPhysical()->Magic / MagicPhysicalFactor; break;}
+// 			else if(physical == C4VString("Breath")) {_value = Breath; _max = GetPhysical()->Breath; break;}
+// 		default:
+// 			LogF("__CUSTOM_EnergyBars physical got invalid value: %s", physical.GetDataString().getData());
+// 			break;
+// 		}
+
+// 		C4ValueInt _offset = 0;
+// 		C4Value offset = (*bar_def)[prop_offset];
+// 		switch (offset.GetType()) {
+// 		case C4V_Any: break;
+// 		case C4V_Int: _offset = offset.getInt(); break;
+// 		default:
+// 			LogF("__CUSTOM_EnergyBars offset is optional, when given it expects a number got: %s; value ignored defaulting to 0", offset.GetDataString().getData());
+// 			break;
+// 		}
+
+// 		const C4Facet &gfx = pDef->GetMainFace(&pDef->Graphics);
+// 		cgo.X += (gfx.Wdt+1) * _offset;
+// 		cgo.DrawEnergyLevelEx(_value, _max, gfx, index.getInt());
+// 		cgo.X += (gfx.Wdt+1);
+// 		// Log("done drawing, offset");
+// 	}
+// }
 
 void C4Object::CompileFunc(StdCompiler *pComp)
 {

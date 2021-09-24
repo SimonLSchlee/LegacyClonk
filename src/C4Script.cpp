@@ -1724,6 +1724,29 @@ static bool FnSetMenuTextProgress(C4AulContext *cthr, C4ValueInt iNewProgress, C
 	return pMenuObj->Menu->SetTextProgress(iNewProgress, false);
 }
 
+// Custom Energy Bars
+
+const int EBP_None        = 0,
+          EBP_Energy      = 1,
+          EBP_Magic       = 2,
+          EBP_Breath      = 3,
+          EBH_Never       = 0,
+          EBH_Empty       = 1,
+          EBH_Full        = 2,
+          EBH_HideHUDBars = 512;
+
+static bool FnDefineEnergyBars(C4AulContext *cthr, C4ValueHash *pMap, C4ValueArray *pArray, C4Object *pObj)
+{
+	if (!pObj) pObj = cthr->Obj; if (!pObj) return false;
+	return pObj->DefineEnergyBars(pMap, pArray);
+}
+
+static void FnSetEnergyBar(C4AulContext *cthr, C4String *szName, C4ValueInt iNewValue, C4Object *pObj, C4ValueInt iNewMax)
+{
+	if (!pObj) pObj = cthr->Obj; if (!pObj) return;
+	return pObj->SetEnergyBar(FnStringPar(szName), iNewValue, iNewMax);
+}
+
 // Check / Status
 
 static C4Object *FnContained(C4AulContext *cthr, C4Object *pObj)
@@ -6296,6 +6319,15 @@ static constexpr C4ScriptConstDef C4ScriptConstMap[] =
 	{ "C4MN_Add_ForceCount",  C4V_Int, C4MN_Add_ForceCount },
 	{ "C4MN_Add_ForceNoDesc", C4V_Int, C4MN_Add_ForceNoDesc },
 
+	{ "EBP_None",        C4V_Int, EBP_None },        // EnergyBar Physical none
+	{ "EBP_Energy",      C4V_Int, EBP_Energy },      // EnergyBar Physical energy
+	{ "EBP_Magic",       C4V_Int, EBP_Magic },       // EnergyBar Physical magic
+	{ "EBP_Breath",      C4V_Int, EBP_Breath },      // EnergyBar Physical breath
+	{ "EBH_Never",       C4V_Int, EBH_Never },       // EnergyBar Hide never
+	{ "EBH_Empty",       C4V_Int, EBH_Empty },       // EnergyBar Hide empty
+	{ "EBH_Full",        C4V_Int, EBH_Full },        // EnergyBar Hide full
+	{ "EBH_HideHUDBars", C4V_Int, EBH_HideHUDBars }, // EnergyBar HideHUDBars if not given ignores C4Def::HB_Energy etc.
+
 	{ "FX_OK",                  C4V_Int, C4Fx_OK }, // generic standard behaviour for all effect callbacks
 	{ "FX_Effect_Deny",         C4V_Int, C4Fx_Effect_Deny }, // delete effect
 	{ "FX_Effect_Annul",        C4V_Int, C4Fx_Effect_Annul }, // delete effect, because it has annulled a countereffect
@@ -6813,6 +6845,8 @@ void InitFunctionMap(C4AulScriptEngine *pEngine)
 	AddFunc(pEngine, "SelectMenuItem",                  FnSelectMenuItem);
 	AddFunc(pEngine, "SetMenuDecoration",               FnSetMenuDecoration);
 	AddFunc(pEngine, "SetMenuTextProgress",             FnSetMenuTextProgress);
+	AddFunc(pEngine, "DefineEnergyBars",                FnDefineEnergyBars);
+	AddFunc(pEngine, "SetEnergyBar",                    FnSetEnergyBar);
 	AddFunc(pEngine, "SetSeason",                       FnSetSeason);
 	AddFunc(pEngine, "GetSeason",                       FnGetSeason);
 	AddFunc(pEngine, "SetClimate",                      FnSetClimate);
