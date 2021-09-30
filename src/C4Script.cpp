@@ -1747,6 +1747,12 @@ static void FnSetEnergyBar(C4AulContext *cthr, C4String *szName, C4ValueInt iNew
 	return pObj->SetEnergyBar(FnStringPar(szName), iNewValue, iNewMax);
 }
 
+static void FnSetEnergyBarVisible(C4AulContext *cthr, C4String *szName, bool fVisible, C4Object *pObj)
+{
+	if (!pObj) pObj = cthr->Obj; if (!pObj) return;
+	return pObj->SetEnergyBarVisible(FnStringPar(szName), fVisible);
+}
+
 // Check / Status
 
 static C4Object *FnContained(C4AulContext *cthr, C4Object *pObj)
@@ -6847,6 +6853,7 @@ void InitFunctionMap(C4AulScriptEngine *pEngine)
 	AddFunc(pEngine, "SetMenuTextProgress",             FnSetMenuTextProgress);
 	AddFunc(pEngine, "DefineEnergyBars",                FnDefineEnergyBars);
 	AddFunc(pEngine, "SetEnergyBar",                    FnSetEnergyBar);
+	AddFunc(pEngine, "SetEnergyBarVisible",             FnSetEnergyBarVisible);
 	AddFunc(pEngine, "SetSeason",                       FnSetSeason);
 	AddFunc(pEngine, "GetSeason",                       FnGetSeason);
 	AddFunc(pEngine, "SetClimate",                      FnSetClimate);

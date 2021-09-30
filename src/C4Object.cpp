@@ -2703,6 +2703,11 @@ void C4Object::SetEnergyBar(const char* name, int32_t value, int32_t max)
 	pEnergyBars->SetEnergyBar(name, value, max);
 }
 
+void C4Object::SetEnergyBarVisible(const char* name, bool fVisible)
+{
+	pEnergyBars->SetEnergyBarVisible(name, fVisible);
+}
+
 void C4Object::DrawEnergyBars(C4Facet &cgo)
 {
 	pEnergyBars->DrawEnergyBars(cgo, *this);

@@ -260,6 +260,7 @@ public:
 
 	bool DefineEnergyBars(C4ValueHash* graphics, C4ValueArray *definition);
 	void SetEnergyBar(const char* name, int32_t value, int32_t max = 0);
+	void SetEnergyBarVisible(const char* name, bool fVisible);
 	void DrawEnergyBars(C4Facet &cgo);
 
 	void DrawLine(C4FacetEx &cgo);

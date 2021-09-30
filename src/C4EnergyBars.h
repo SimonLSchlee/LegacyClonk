@@ -63,8 +63,11 @@ public:
 
 	void DrawEnergyBars(C4Facet &cgo, C4Object &obj);
 	void SetEnergyBar(std::string name, int32_t value, int32_t max = 0);
-};
+	void SetEnergyBarVisible(std::string name, bool visible);
 
+private:
+	C4EnergyBar* BarVal(std::string name);
+};
 
 class C4EnergyBarDef
 {
@@ -104,17 +107,17 @@ public:
 	int32_t hide;
 
 	std::string gfx;
-	std::shared_ptr<C4FacetExID> facet;
+	std::shared_ptr<C4FacetExID> facet; // calculated from gfx
 	int32_t index;
 	bool advance;
 
-	int32_t value_index; // TODO set value_index
+	int32_t value_index;
 	int32_t value;
 	int32_t max;
-	float scale;
+	bool visible;
+	float scale; // calculated from gfx.scale
 
 	void CompileFunc(StdCompiler *pComp) {
-		Log("C4EnergyBarDef CompileFunc start");
 		pComp->Value(mkNamingAdapt(name, "Name"));
 		pComp->Value(mkNamingAdapt(physical, "Physical", 0));
 		pComp->Value(mkNamingAdapt(hide, "Hide", 1));
@@ -124,7 +127,7 @@ public:
 		pComp->Value(mkNamingAdapt(value_index, "ValueIndex", -1));
 		pComp->Value(mkNamingAdapt(value, "Value", 0));
 		pComp->Value(mkNamingAdapt(max, "Max", 1000000));
-		Log("C4EnergyBarDef CompileFunc end");
+		pComp->Value(mkNamingAdapt(visible, "Visible", true));
 		// gfx and scale are restored from def.gfxs
 	}
 };

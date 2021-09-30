@@ -85,26 +85,40 @@ C4EnergyBar::C4EnergyBar(int32_t _value, int32_t _max, bool _visible)
 C4EnergyBars::C4EnergyBars(std::shared_ptr<C4EnergyBarsDef> _def):def(_def) {
 	for (auto bardef: def->bars) {
 		if (bardef.physical == 0) {
-			values.emplace_back(bardef.value, bardef.max, true);
+			values.emplace_back(bardef.value, bardef.max, bardef.visible);
 		}
 	}
 }
 
-void C4EnergyBars::SetEnergyBar(std::string name, int32_t value, int32_t max)
-{
+C4EnergyBar* C4EnergyBars::BarVal(std::string name) {
 	try
 	{
 		auto index = def->names.at(name);
 		auto &bardef = def->bars.at(index);
 		if (bardef.value_index >= 0) {
-			auto &barval = values.at(bardef.value_index);
-			barval.value = value;
-			if(max > 0) barval.max = max;
+			return &values.at(bardef.value_index);
 		}
 	}
 	catch (const std::out_of_range &)
 	{
-		return;
+	}
+	return nullptr;
+}
+
+void C4EnergyBars::SetEnergyBar(std::string name, int32_t value, int32_t max)
+{
+	auto *barval = BarVal(name);
+	if (barval) {
+		barval->value = value;
+		if(max > 0) barval->max = max;
+	}
+}
+
+void C4EnergyBars::SetEnergyBarVisible(std::string name, bool visible)
+{
+	auto *barval = BarVal(name);
+	if (barval) {
+		barval->visible = visible;
 	}
 }
 
@@ -112,8 +126,6 @@ void C4EnergyBars::DrawEnergyBars(C4Facet &cgo, C4Object &obj)
 {
 	bool fNeedsAdvance = false;
 	int32_t iMaxWidth = 0;
-
-	// LogF("drawing energy bars number of bars: %d", def->bars.size());
 
 	for (auto &bardef: def->bars) {
 		int32_t value = 0;
@@ -138,15 +150,12 @@ void C4EnergyBars::DrawEnergyBars(C4Facet &cgo, C4Object &obj)
 			auto &barval = values.at(bardef.value_index);
 			value = barval.value;
 			max   = barval.max;
+			fVisible = barval.visible;
 			break;
 		}
 
 		if (bardef.hide & C4EnergyBarDef::EBH_Empty && value == 0)   fVisible = false;
 		if (bardef.hide & C4EnergyBarDef::EBH_Full  && value >= max) fVisible = false;
-
-		// LogF("drawing energy bar: name %s", bardef.name.c_str());
-		// LogF("drawing energy bar: value %d max %d", value, max);
-		// LogF("drawing energy bar: physical %d hide %d", bardef.physical, bardef.hide);
 
 		if (!fVisible) {
 			if (fNeedsAdvance && bardef.advance) {cgo.X += iMaxWidth; iMaxWidth = 0; fNeedsAdvance = false;}
@@ -166,13 +175,13 @@ void C4EnergyBars::DrawEnergyBars(C4Facet &cgo, C4Object &obj)
 C4EnergyBarDef::C4EnergyBarDef():
 	name(), physical(0), hide(0),
 	gfx(), facet(), index(), advance(true),
-	value_index(-1), value(0), max(1000000), scale(1.0f)
+	value_index(-1), value(0), max(1000000), visible(true), scale(1.0f)
 {}
 
 C4EnergyBarDef::C4EnergyBarDef(const char *_name, const char *_gfx, const std::shared_ptr<C4FacetExID> &_facet, int32_t _index, int32_t _physical):
 	name(_name), physical(_physical), hide(DefaultHide(physical)),
 	gfx(_gfx), facet(_facet), index(_index), advance(true),
-	value_index(-1), value(0), max(1000000), scale(1.0f)
+	value_index(-1), value(0), max(1000000), visible(true), scale(1.0f)
 {}
 
 C4EnergyBarDef::~C4EnergyBarDef()
@@ -189,7 +198,8 @@ bool C4EnergyBarDef::operator==(const C4EnergyBarDef &rhs) const
 		index == rhs.index &&
 		advance == rhs.advance &&
 		value == rhs.value &&
-		max == rhs.max
+		max == rhs.max &&
+		visible == rhs.visible
 	);
 }
 
@@ -231,6 +241,7 @@ std::size_t C4EnergyBarDef::GetHash() const
 	hashCombine(result, std::hash<int32_t>{}(value_index));
 	hashCombine(result, std::hash<int32_t>{}(value));
 	hashCombine(result, std::hash<int32_t>{}(max));
+	hashCombine(result, std::hash<bool>{}(visible));
 	return result;
 }
 
@@ -257,7 +268,7 @@ bool C4EnergyBarsDef::PopulateNamesFromValues(const C4EnergyBarsDef::Bars &bars,
 	for (auto bar: bars) {
 		auto success = names.emplace(bar.name, i);
 		if (!success.second) {
-			LogF("C4EnergyBarDef %s definition, names must be unique, duplicate detected", bar.name.c_str());
+			LogF("C4EnergyBarsDef %s definition, names must be unique, duplicate detected", bar.name.c_str());
 			return false;
 		}
 		++i;
@@ -275,8 +286,8 @@ std::size_t C4EnergyBarsDef::GetHash() const
 {
 	std::size_t result = 0;
 	for (auto &gfx: gfxs) {
-		hashCombine(result, std::hash<uint32_t>{}(gfx.second.key));
-		hashCombine(result, std::hash<uint32_t>{}(gfx.second.file));
+		hashCombine(result, std::hash<std::string>{}(gfx.second.key));
+		hashCombine(result, std::hash<std::string>{}(gfx.second.file));
 		hashCombine(result, std::hash<uint32_t>{}(gfx.second.amount));
 		hashCombine(result, std::hash<uint32_t>{}(gfx.second.scale));
 	}
@@ -313,7 +324,7 @@ std::shared_ptr<C4FacetExID> C4EnergyBarsUniquifier::GetFacet(C4EnergyBarsDef::G
 		scale = gfx.scale;
 		file = gfx.file;
 	} catch (const std::out_of_range &) {
-		LogF("Missing key '%s' in graphics definition", key.c_str());
+		LogF("DefineEnergyBars: Missing key '%s' in graphics definition", key.c_str());
 		return nullptr;
 	}
 
@@ -369,11 +380,9 @@ std::shared_ptr<C4EnergyBars> C4EnergyBarsUniquifier::DefineEnergyBars(C4ValueHa
 	C4EnergyBarsDef::Names names;
 	bool success = ProcessGraphics(*graphics, gfx) && ProcessGroup(value_index, gfx, *definition, bars, true) && C4EnergyBarsDef::PopulateNamesFromValues(bars, names);
 	if(success) {
-		LogF("DefineEnergyBars success");
 		auto def = UniqueifyDefinition(new C4EnergyBarsDef(gfx, bars, names));
 		return Instantiate(def);
 	}
-	LogF("DefineEnergyBars failed returning nullptr");
 	return nullptr;
 }
 
@@ -381,8 +390,6 @@ bool C4EnergyBarsUniquifier::ProcessGraphics(C4ValueHash &map, C4EnergyBarsDef::
 {
 	auto amount = C4VString("amount");
 	auto scale  = C4VString("scale");
-
-	LogF("processing graphics %s ", C4Value(&map).GetDataString().getData());
 
 	C4ValueHash::Iterator end = map.end();
 	for (C4ValueHash::Iterator it = map.begin(); it != end; ++it) {
@@ -402,7 +409,6 @@ bool C4EnergyBarsUniquifier::ProcessGraphics(C4ValueHash &map, C4EnergyBarsDef::
 		if (_amount == 0) _amount = 1;
 		if (_scale == 0) _scale = 100;
 
-		LogF("processing graphics amount %d scale %d ", _amount, _scale);
 		auto it_success = gfx.emplace(_key, C4EnergyBarsDef::Gfx(_key, _file, _amount, _scale));
 		if (!it_success.second) {
 			LogF("DefineEnergyBars %s duplicate key in gfx description ", _key);
@@ -415,7 +421,6 @@ bool C4EnergyBarsUniquifier::ProcessGraphics(C4ValueHash &map, C4EnergyBarsDef::
 
 bool C4EnergyBarsUniquifier::ProcessGroup(int32_t &value_index, C4EnergyBarsDef::Gfxs &graphics, const C4ValueArray &group, C4EnergyBarsDef::Bars &bars, bool advanceAlways)
 {
-	LogF("ProcessingGroup of Size: %d", group.GetSize());
 	int32_t size = group.GetSize();
 	for (int32_t i = 0; i < size; ++i) {
 		C4Value element = group[i];
@@ -463,7 +468,6 @@ bool C4EnergyBarsUniquifier::ProcessEnergyBar(int32_t &value_index, C4EnergyBars
 		LogF("DefineEnergyBars: EnergyBar definition has no name: %s", name.GetDataString().getData());
 		return false;
 	}
-	LogF("Processing EnergyBar 1: %s", name.GetDataString().getData());
 
 	C4Value gfx = bar[C4VString("gfx")];
 	auto *_gfx = gfx.getStr();
@@ -471,7 +475,6 @@ bool C4EnergyBarsUniquifier::ProcessEnergyBar(int32_t &value_index, C4EnergyBars
 		LogF("DefineEnergyBars: EnergyBar definition has no gfx: %s", gfx.GetDataString().getData());
 		return false;
 	}
-	LogF("Processing EnergyBar 2: %s", gfx.GetDataString().getData());
 
 	C4Value physical = bar[C4VString("physical")];
 	C4ValueInt _physical = physical.getInt();
@@ -479,7 +482,6 @@ bool C4EnergyBarsUniquifier::ProcessEnergyBar(int32_t &value_index, C4EnergyBars
 		LogF("DefineEnergyBars %s definition has invalid physical: %s", name.GetDataString().getData(), physical.GetDataString().getData());
 		return false;
 	}
-	LogF("Processing EnergyBar 3: %s _physical %d", name.GetDataString().getData(), _physical);
 
 	C4Value hide = bar[C4VString("hide")];
 	C4ValueInt _hide = C4EnergyBarDef::EBH_Empty;
@@ -488,26 +490,25 @@ bool C4EnergyBarsUniquifier::ProcessEnergyBar(int32_t &value_index, C4EnergyBars
 		LogF("DefineEnergyBars %s definition has invalid hide: %s", name.GetDataString().getData(), hide.GetDataString().getData());
 		return false;
 	}
-	LogF("Processing EnergyBar 4: %s _hide %d", name.GetDataString().getData(), _hide);
 
 	C4Value index = bar[C4VString("index")];
 	C4Value value = bar[C4VString("value")];
 	C4Value max   = bar[C4VString("max")];
 	C4ValueInt _index = index.getInt();
 	C4ValueInt _value = value.getInt();
-	C4ValueInt _max = max.getInt();
+	C4ValueInt _max   = max.getInt();
 	if (_index < 0) {LogF("DefineEnergyBars %s definition has invalid index: %s", name.GetDataString().getData(), _index); return false;}
 	if (_value < 0) {LogF("DefineEnergyBars %s definition has invalid value: %s", name.GetDataString().getData(), _value); return false;}
 	if (_max   < 0) {LogF("DefineEnergyBars %s definition has invalid max: %s", name.GetDataString().getData(), _max); return false;}
-	LogF("Processing EnergyBar 5: %s", name.GetDataString().getData());
 
-	LogF("Processing EnergyBar 6: %s _index %d _value %d _max %d", name.GetDataString().getData(), _index, _value, _max);
-
-	// const C4Facet &gfx = Def->GetMainFace(&Def->Graphics);
+	bool _visible = true;
+	if (bar.contains(C4VString("visible"))) {
+		auto visible = bar[C4VString("visible")];
+		_visible = visible.getBool();
+	}
 
 	{
 		const char* file = _gfx->Data.getData();
-		Log("facet loading...");
 		auto facet = GetFacet(graphics, file);
 		if(facet == nullptr) {return false;}
 
@@ -521,13 +522,13 @@ bool C4EnergyBarsUniquifier::ProcessEnergyBar(int32_t &value_index, C4EnergyBars
 		if(hide != C4VNull) bar.hide = _hide;
 		bar.value = _value;
 		bar.max = _max;
+		bar.visible = _visible;
 		bar.advance = advance;
 		auto scale = graphics.at(file).scale;
 		bar.scale = static_cast<float>(scale) / 100.0f;
 		bars.push_back(bar);
 	}
 
-	LogF("Processing EnergyBar 7: %s return true", name.GetDataString().getData());
 	return true;
 }
 
