@@ -2685,13 +2685,15 @@ void C4Object::DrawLine(C4FacetEx &cgo)
 bool C4Object::DefineEnergyBars(C4ValueHash* graphics, C4ValueArray *definition)
 {
 	// If null pointer is given restore default energy bars
-	if (!graphics || !definition) {
+	if (!graphics || !definition)
+	{
 		pEnergyBars = Game.EnergyBars.DefaultBars();
 		return true;
 	}
 
 	auto bars = Game.EnergyBars.DefineEnergyBars(graphics, definition);
-	if (bars != nullptr) {
+	if (bars != nullptr)
+	{
 		pEnergyBars = bars;
 		return true;
 	}
