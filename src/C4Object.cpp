@@ -2890,6 +2890,8 @@ void C4Object::CompileFunc(StdCompiler *pComp)
 	pComp->Value(mkNamingPtrAdapt(pDrawTransform,                       "DrawTransform"));
 	pComp->Value(mkNamingPtrAdapt(pEffects,                             "Effects"));
 	pComp->Value(mkNamingAdapt(C4GraphicsOverlayListAdapt(pGfxOverlay), "GfxOverlay",         nullptr));
+	pComp->Value(mkNamingAdapt(C4EnergyBarsAdapt(pEnergyBars), "EnergyBars", Game.EnergyBars.DefaultBars()));
+
 
 	if (PhysicalTemporary)
 	{

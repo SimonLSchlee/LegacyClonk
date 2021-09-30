@@ -153,14 +153,9 @@ void C4EnergyBars::DrawEnergyBars(C4Facet &cgo, C4Object &obj)
 			continue;
 		}
 
-		// Log("before draw");
-		int32_t width = bardef.gfx->Wdt;
+		int32_t width = bardef.facet->Wdt;
 		cgo.Wdt = width;
-		// float scale = 1.0f; // TODO put scale some where sensical
-		// float scale = 0.5f;
-		// float scale = 2.0f;
-		cgo.DrawEnergyLevelEx(value, max, *bardef.gfx, bardef.index, bardef.scale);
-		// Log("after draw");
+		cgo.DrawEnergyLevelEx(value, max, *bardef.facet, bardef.index, bardef.scale);
 
 		iMaxWidth = std::max<int32_t>(iMaxWidth, width+1);
 		if (bardef.advance) {cgo.X += iMaxWidth; iMaxWidth = 0; fNeedsAdvance = false;}
@@ -168,9 +163,15 @@ void C4EnergyBars::DrawEnergyBars(C4Facet &cgo, C4Object &obj)
 	}
 }
 
-C4EnergyBarDef::C4EnergyBarDef(const char *_name, const char *_file, const std::shared_ptr<C4FacetExID> &_gfx, int32_t _index, int32_t _physical):
+C4EnergyBarDef::C4EnergyBarDef():
+	name(), physical(0), hide(0),
+	gfx(), facet(), index(), advance(true),
+	value_index(-1), value(0), max(1000000), scale(1.0f)
+{}
+
+C4EnergyBarDef::C4EnergyBarDef(const char *_name, const char *_gfx, const std::shared_ptr<C4FacetExID> &_facet, int32_t _index, int32_t _physical):
 	name(_name), physical(_physical), hide(DefaultHide(physical)),
-	file(_file), gfx(_gfx), index(_index), advance(true),
+	gfx(_gfx), facet(_facet), index(_index), advance(true),
 	value_index(-1), value(0), max(1000000), scale(1.0f)
 {}
 
@@ -183,8 +184,8 @@ bool C4EnergyBarDef::operator==(const C4EnergyBarDef &rhs) const
 		name == rhs.name &&
 		physical == rhs.physical &&
 		hide == rhs.hide &&
-		file == rhs.file &&
 		gfx == rhs.gfx &&
+		facet == rhs.facet &&
 		index == rhs.index &&
 		advance == rhs.advance &&
 		value == rhs.value &&
@@ -224,7 +225,7 @@ std::size_t C4EnergyBarDef::GetHash() const
 	std::size_t result = std::hash<std::string>{}(name);
 	hashCombine(result, std::hash<int32_t>{}(physical));
 	hashCombine(result, std::hash<int32_t>{}(hide));
-	hashCombine(result, std::hash<std::string>{}(file));
+	hashCombine(result, std::hash<std::string>{}(gfx));
 	hashCombine(result, std::hash<int32_t>{}(index));
 	hashCombine(result, std::hash<bool>{}(advance));
 	hashCombine(result, std::hash<int32_t>{}(value_index));
@@ -233,8 +234,8 @@ std::size_t C4EnergyBarDef::GetHash() const
 	return result;
 }
 
-
-// TODO add mapping from gfxname to graphics properties {count: amount of bars in gfx, scale: 100}
+C4EnergyBarsDef::C4EnergyBarsDef(): gfxs(), bars()
+{}
 
 C4EnergyBarsDef::C4EnergyBarsDef(const Gfxs &_gfxs, const Bars &_bars): gfxs(_gfxs), bars(_bars)
 {
@@ -274,7 +275,8 @@ std::size_t C4EnergyBarsDef::GetHash() const
 {
 	std::size_t result = 0;
 	for (auto &gfx: gfxs) {
-		hashCombine(result, std::hash<std::string>{}(gfx.first));
+		hashCombine(result, std::hash<uint32_t>{}(gfx.second.key));
+		hashCombine(result, std::hash<uint32_t>{}(gfx.second.file));
 		hashCombine(result, std::hash<uint32_t>{}(gfx.second.amount));
 		hashCombine(result, std::hash<uint32_t>{}(gfx.second.scale));
 	}
@@ -289,12 +291,12 @@ std::size_t std::hash<C4EnergyBarsDef>::operator()(const C4EnergyBarsDef &value)
 	return value.GetHash();
 }
 
-std::shared_ptr<C4FacetExID> C4EnergyBarsUniquifier::GetFacet(C4EnergyBarsDef::Gfxs &gfxs, const char *file)
+std::shared_ptr<C4FacetExID> C4EnergyBarsUniquifier::GetFacet(C4EnergyBarsDef::Gfxs &gfxs, const char *gfx)
 {
-	std::string name(file);
+	std::string key(gfx);
 
 	try {
-		auto facet = graphics.at(name).lock();
+		auto facet = graphics.at(key).lock();
 		if(facet) {
 			return facet;
 		}
@@ -302,28 +304,25 @@ std::shared_ptr<C4FacetExID> C4EnergyBarsUniquifier::GetFacet(C4EnergyBarsDef::G
 	}
 
 	// facet needs to be loaded
-	auto facet = std::shared_ptr<C4FacetExID>(new C4FacetExID(), [=](C4FacetExID* facet){graphics.erase(name);});
-	LogF("facet count: %d", facet.use_count());
-
-	// why wasn't this already called before we get here?
-	Game.GraphicsResource.RegisterMainGroups();
-
-	bool success = Game.GraphicsResource.LoadFile(*facet, file, Game.GraphicsResource.Files);
-	if(!success) {LogF("could not load custom energy bar graphic '%s'", file); return nullptr;}
-
-	// int32_t amount = 3;
 	int32_t amount = 0;
 	int32_t scale  = 100;
+	std::string file;
 	try {
-		auto gfx = gfxs.at(file);
+		auto gfx = gfxs.at(key);
 		amount = gfx.amount;
 		scale = gfx.scale;
+		file = gfx.file;
 	} catch (const std::out_of_range &) {
-		LogF("Missing key '%s' in graphics definition", file);
+		LogF("Missing key '%s' in graphics definition", key.c_str());
 		return nullptr;
 	}
-	LogF("AMOUNT '%d'", amount);
-	LogF("SCALE '%d'", scale);
+
+	// TODO FIXME why wasn't this already called before we get here?
+	Game.GraphicsResource.RegisterMainGroups();
+
+	auto facet = std::shared_ptr<C4FacetExID>(new C4FacetExID(), [=](C4FacetExID* facet){graphics.erase(key);});
+	bool success = Game.GraphicsResource.LoadFile(*facet, file.c_str(), Game.GraphicsResource.Files);
+	if(!success) {LogF("could not load custom energy bar graphic '%s'", file.c_str()); return nullptr;}
 
 	int32_t bar_wdt = facet->Surface->Wdt / (amount * 2);
 	int32_t bar_hgt = facet->Surface->Hgt / 3;
@@ -331,29 +330,25 @@ std::shared_ptr<C4FacetExID> C4EnergyBarsUniquifier::GetFacet(C4EnergyBarsDef::G
 	bar_hgt = (bar_hgt*100) / scale;
 	facet->Set(facet->Surface, 0, 0, bar_wdt, bar_hgt);
 
-	graphics.emplace(name, std::weak_ptr<C4FacetExID>(facet));
+	graphics.emplace(key, std::weak_ptr<C4FacetExID>(facet));
 	return facet;
 }
 
 std::shared_ptr<C4EnergyBarsDef> C4EnergyBarsUniquifier::UniqueifyDefinition(C4EnergyBarsDef *definition)
 {
-	Log("UniqueifyDefinition start");
+	// TODO somehow change *definition to unique_ptr?
+	// currently definition always gets owned by a shared_ptr, that either ends up being the canonical shared_ptr
+	// or goes out of scope deleting the definition
+
 	// the weak ptr remembers the custom deleter
 	auto shared = std::shared_ptr<C4EnergyBarsDef>(definition, [=](C4EnergyBarsDef* def){definitions.erase(*def);});
 	auto it_success = definitions.emplace(*definition, std::weak_ptr<C4EnergyBarsDef>(shared));
 	if (!it_success.second) {
-		Log("UniqueifyDefinition success");
 		// definition already existed, we have to override shared so that it is linked to
 		// the same control block that was used to create the first shared ptr
 		shared = it_success.first->second.lock();
 	}
-	Log("UniqueifyDefinition end");
 	return shared;
-}
-
-void C4EnergyBarsUniquifier::CompileFunc(StdCompiler *pComp)
-{
-
 }
 
 std::shared_ptr<C4EnergyBars> C4EnergyBarsUniquifier::DefineEnergyBars(C4ValueHash* graphics, C4ValueArray *definition)
@@ -397,15 +392,20 @@ bool C4EnergyBarsUniquifier::ProcessGraphics(C4ValueHash &map, C4EnergyBarsDef::
 		C4Value val = (*it).second;
 		auto *_val = val.getMap();
 		auto &m = *_val;
+
+		C4Value file = m[C4VString("file")];
+		auto _file = _key;
+		if (file != C4VNull) _file = file.getStr()->Data.getData();
+
 		int32_t _amount = m[amount].getInt();
 		int32_t _scale  = m[scale].getInt();
 		if (_amount == 0) _amount = 1;
 		if (_scale == 0) _scale = 100;
 
 		LogF("processing graphics amount %d scale %d ", _amount, _scale);
-		auto it_success = gfx.emplace(_key, C4EnergyBarsDef::Gfx(_amount, _scale));
+		auto it_success = gfx.emplace(_key, C4EnergyBarsDef::Gfx(_key, _file, _amount, _scale));
 		if (!it_success.second) {
-			LogF("DefineEnergyBars %s duplicate key in gfx description ", key.GetDataString().getData());
+			LogF("DefineEnergyBars %s duplicate key in gfx description ", _key);
 			return false;
 		}
 	}
@@ -507,7 +507,7 @@ bool C4EnergyBarsUniquifier::ProcessEnergyBar(int32_t &value_index, C4EnergyBars
 
 	{
 		const char* file = _gfx->Data.getData();
-		Log("facet loading(..");
+		Log("facet loading...");
 		auto facet = GetFacet(graphics, file);
 		if(facet == nullptr) {return false;}
 
@@ -536,3 +536,50 @@ std::shared_ptr<C4EnergyBars> C4EnergyBarsUniquifier::Instantiate(std::shared_pt
 	if(definition == nullptr) return nullptr;
 	return std::make_shared<C4EnergyBars>(definition);
 }
+
+void C4EnergyBarsAdapt::CompileFunc(StdCompiler *pComp) {
+	bool fCompiler = pComp->isCompiler();
+
+	if (!fCompiler) {
+		// serialize
+		if (pBars) {
+			std::vector<C4EnergyBarsDef::Gfx> temp;
+			for (auto it: pBars->def->gfxs) {
+				temp.push_back(it.second);
+			}
+			pComp->Value(mkNamingAdapt(mkSTLContainerAdapt(temp), "Gfx", std::vector<C4EnergyBarsDef::Gfx>{}));
+			pComp->Value(mkNamingAdapt(mkSTLContainerAdapt(pBars->def->bars), "Def", C4EnergyBarsDef::Bars{}));
+			pComp->Value(mkNamingAdapt(mkSTLContainerAdapt(pBars->values), "Bar", std::vector<C4EnergyBar>{}));
+		}
+
+	} else {
+		// deserialize
+		C4EnergyBarsDef::Gfxs gfxs{};
+		std::vector<C4EnergyBarsDef::Gfx> temp;
+		pComp->Value(mkNamingAdapt(mkSTLContainerAdapt(temp), "Gfx", std::vector<C4EnergyBarsDef::Gfx>{}));
+		for (auto &gfx: temp) {
+			gfxs.emplace(gfx.key, gfx);
+		}
+
+		C4EnergyBarsDef::Bars bars{};
+		pComp->Value(mkNamingAdapt(mkSTLContainerAdapt(bars), "Def", C4EnergyBarsDef::Bars{}));
+
+		C4EnergyBarsDef *def = new C4EnergyBarsDef();
+		def->gfxs.swap(gfxs);
+		def->bars.swap(bars);
+
+		// get facets and restore scale from gfxs
+		for (auto &bar: def->bars) {
+			bar.facet = Game.EnergyBars.GetFacet(def->gfxs, bar.gfx.c_str());
+			auto scale = def->gfxs.at(bar.gfx).scale;
+			bar.scale = static_cast<float>(scale) / 100.0f;
+		}
+
+		auto uniq_def = Game.EnergyBars.UniqueifyDefinition(def);
+		auto instance = Game.EnergyBars.Instantiate(uniq_def);
+		pComp->Value(mkNamingAdapt(mkSTLContainerAdapt(instance->values), "Bar", std::vector<C4EnergyBar>{}));
+
+		pBars = instance;
+	}
+}
+

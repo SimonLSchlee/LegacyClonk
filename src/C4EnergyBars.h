@@ -37,7 +37,17 @@ public:
 	int32_t max;
 	bool visible;
 
+	C4EnergyBar(): value(0), max(1000000), visible(true) {}
 	C4EnergyBar(int32_t _value, int32_t _max, bool _visible);
+	bool operator==(const C4EnergyBar &rhs) const {
+		return value == rhs.value && max == rhs.max && visible == rhs.visible;
+	}
+
+	void CompileFunc(StdCompiler *pComp) {
+		pComp->Value(mkNamingAdapt(value, "Value", 0));
+		pComp->Value(mkNamingAdapt(max, "Max", 1000000));
+		pComp->Value(mkNamingAdapt(visible, "Visible", true));
+	}
 };
 
 class C4EnergyBarsDef;
@@ -76,7 +86,7 @@ public:
 	};
 
 public:
-  C4EnergyBarDef() = delete;
+  C4EnergyBarDef();
 	C4EnergyBarDef(const char *_name, const char *_file, const std::shared_ptr<C4FacetExID> &_gfx, int32_t _index, int32_t _physical = 0);
   ~C4EnergyBarDef();
 
@@ -93,8 +103,8 @@ public:
 	int32_t physical;
 	int32_t hide;
 
-	std::string file;
-	std::shared_ptr<C4FacetExID> gfx;
+	std::string gfx;
+	std::shared_ptr<C4FacetExID> facet;
 	int32_t index;
 	bool advance;
 
@@ -102,24 +112,50 @@ public:
 	int32_t value;
 	int32_t max;
 	float scale;
+
+	void CompileFunc(StdCompiler *pComp) {
+		Log("C4EnergyBarDef CompileFunc start");
+		pComp->Value(mkNamingAdapt(name, "Name"));
+		pComp->Value(mkNamingAdapt(physical, "Physical", 0));
+		pComp->Value(mkNamingAdapt(hide, "Hide", 1));
+		pComp->Value(mkNamingAdapt(gfx, "Gfx"));
+		pComp->Value(mkNamingAdapt(index, "Index"));
+		pComp->Value(mkNamingAdapt(advance, "Advance", true));
+		pComp->Value(mkNamingAdapt(value_index, "ValueIndex", -1));
+		pComp->Value(mkNamingAdapt(value, "Value", 0));
+		pComp->Value(mkNamingAdapt(max, "Max", 1000000));
+		Log("C4EnergyBarDef CompileFunc end");
+		// gfx and scale are restored from def.gfxs
+	}
 };
 
-template <typename Map>
-bool map_compare (Map const &lhs, Map const &rhs) {
-	return lhs.size() == rhs.size()
-		&& std::equal(lhs.begin(), lhs.end(),
-									rhs.begin());
+namespace {
+	template <typename Map>
+	bool map_compare (Map const &lhs, Map const &rhs) {
+		return lhs.size() == rhs.size()
+			&& std::equal(lhs.begin(), lhs.end(),
+										rhs.begin());
+	}
 }
 
 class C4EnergyBarsDef
 {
 public:
 	struct Gfx {
+		std::string key;
+		std::string file;
 		int32_t amount;
 		int32_t scale;
-		Gfx():amount(0), scale(0) {}
-		Gfx(int32_t _a, int32_t _s):amount(_a), scale(_s) {}
-		bool operator==(const Gfx &rhs) const {return amount == rhs.amount && scale == rhs.scale;}
+		Gfx():key(), file(), amount(0), scale(0) {}
+		Gfx(std::string k, std::string f, int32_t _a, int32_t _s):key(k), file(f), amount(_a), scale(_s) {}
+		bool operator==(const Gfx &rhs) const {return key == rhs.key && file == rhs.file && amount == rhs.amount && scale == rhs.scale;}
+
+		void CompileFunc(StdCompiler *pComp) {
+			pComp->Value(mkNamingAdapt(key, "Key"));
+			pComp->Value(mkNamingAdapt(file, "File"));
+			pComp->Value(mkNamingAdapt(amount, "Amount"));
+			pComp->Value(mkNamingAdapt(scale, "Scale"));
+		}
 	};
 	// Gfx: amount scale
 	// using Gfx   = std::tuple<int32_t, int32_t>;
@@ -127,7 +163,7 @@ public:
 	using Bars  = std::vector<C4EnergyBarDef>;
 	using Names = std::unordered_map<std::string, int32_t>;
 
-	C4EnergyBarsDef() = delete;
+	C4EnergyBarsDef();
 	C4EnergyBarsDef(const Gfxs &_gfxs, const Bars &_bars);
 	C4EnergyBarsDef(const Gfxs &_gfxs, const Bars &_bars, const Names &_names);
 
@@ -169,7 +205,7 @@ public:
 	{
 		if(!defaultbars) {
 			const char* file = "EnergyBars";
-			auto gfxs = C4EnergyBarsDef::Gfxs{{file, C4EnergyBarsDef::Gfx(3, 100)}};
+			auto gfxs = C4EnergyBarsDef::Gfxs{{file, C4EnergyBarsDef::Gfx(file, file, 3, 100)}};
 			auto gfx = GetFacet(gfxs, file);
 			auto def = UniqueifyDefinition(
 				new C4EnergyBarsDef(
@@ -192,19 +228,33 @@ public:
 	void CompileFunc(StdCompiler *pComp);
 	std::shared_ptr<C4EnergyBars> DefineEnergyBars(C4ValueHash* graphics, C4ValueArray *definition);
 
+	std::shared_ptr<C4FacetExID>     GetFacet(C4EnergyBarsDef::Gfxs &gfx, const char *file);
+	std::shared_ptr<C4EnergyBarsDef> UniqueifyDefinition(C4EnergyBarsDef *definition);
+	std::shared_ptr<C4EnergyBars>    Instantiate(std::shared_ptr<C4EnergyBarsDef> definition);
+
 private:
 	bool ProcessGraphics(C4ValueHash &map, C4EnergyBarsDef::Gfxs &gfx);
 	bool ProcessGroup(int32_t &value_index, C4EnergyBarsDef::Gfxs &graphics, const C4ValueArray &group, C4EnergyBarsDef::Bars &bars, bool advanceAlways);
 	bool ProcessEnergyBar(int32_t &value_index, C4EnergyBarsDef::Gfxs &graphics, const C4ValueHash &bar, C4EnergyBarsDef::Bars &bars, bool advance);
 	bool PopulateNamesFromValues(const C4EnergyBarsDef::Bars &bars, C4EnergyBarsDef::Names &names);
 
-	std::shared_ptr<C4FacetExID>     GetFacet(C4EnergyBarsDef::Gfxs &gfx, const char *file);
-	std::shared_ptr<C4EnergyBarsDef> UniqueifyDefinition(C4EnergyBarsDef *definition);
-	std::shared_ptr<C4EnergyBars>    Instantiate(std::shared_ptr<C4EnergyBarsDef> definition);
-
 	std::unordered_map<std::string, std::weak_ptr<C4FacetExID>>         graphics;
 	std::unordered_map<C4EnergyBarsDef, std::weak_ptr<C4EnergyBarsDef>> definitions;
 
 	std::shared_ptr<C4EnergyBars> defaultbars;
+};
+
+class C4EnergyBarsAdapt
+{
+protected:
+	std::shared_ptr<C4EnergyBars> &pBars;
+
+public:
+	C4EnergyBarsAdapt(std::shared_ptr<C4EnergyBars> &_bars): pBars(_bars) {}
+	void CompileFunc(StdCompiler *pComp);
+
+	// Default checking / setting
+	bool operator==(std::shared_ptr<C4EnergyBars> pDefault) { return pBars == pDefault; }
+	void operator=(std::shared_ptr<C4EnergyBars> pDefault)  { pBars = pDefault; }
 };
 
