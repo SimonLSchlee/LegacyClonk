@@ -113,12 +113,6 @@ public:
 };
 
 
-namespace
-{
-	template <typename Map>
-	bool map_compare (Map const &lhs, Map const &rhs);
-}
-
 class C4EnergyBarsDef
 {
 public:
