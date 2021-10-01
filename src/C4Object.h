@@ -199,7 +199,7 @@ public:
 
 	class C4GraphicsOverlay *pGfxOverlay; // singly linked list of overlay graphics
 
-	std::shared_ptr<C4EnergyBars> pEnergyBars;
+	std::shared_ptr<C4EnergyBars> energyBars;
 
 protected:
 	std::string CustomName;
@@ -258,7 +258,7 @@ public:
 		FIXED nxdir, FIXED nydir, FIXED nrdir, int32_t iController);
 	void CompileFunc(StdCompiler *pComp);
 
-	bool DefineEnergyBars(C4ValueHash* graphics, C4ValueArray *definition);
+	bool DefineEnergyBars(C4ValueHash *graphics, C4ValueArray *definition);
 	void SetEnergyBar(const char* name, int32_t value, int32_t max = 0);
 	void SetEnergyBarVisible(const char* name, bool fVisible);
 	void DrawEnergyBars(C4Facet &cgo);

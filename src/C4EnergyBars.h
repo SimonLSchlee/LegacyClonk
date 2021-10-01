@@ -40,7 +40,7 @@ public:
 	C4EnergyBar(int32_t _value, int32_t _max, bool _visible);
 	bool operator==(const C4EnergyBar &rhs) const;
 
-	void CompileFunc(StdCompiler *pComp);
+	void CompileFunc(StdCompiler *comp);
 };
 
 
@@ -85,17 +85,15 @@ public:
 
 public:
   C4EnergyBarDef();
-	C4EnergyBarDef(const char *_name, const char *_file, const std::shared_ptr<C4FacetExID> &_gfx, int32_t _index, int32_t _physical = 0);
-  ~C4EnergyBarDef();
+	C4EnergyBarDef(std::string_view _name, std::string_view _file, const std::shared_ptr<C4FacetExID> &_gfx, int32_t _index, int32_t _physical = 0);
 
 	bool operator==(const C4EnergyBarDef &rhs) const;
 
-	static int32_t PhysicalFromName(std::string name);
 	static int32_t DefaultHide(int32_t physical);
 	static int32_t DefaultIndex(int32_t physical);
 
 	std::size_t GetHash() const;
-	void CompileFunc(StdCompiler *pComp);
+	void CompileFunc(StdCompiler *comp);
 
 public:
 	std::string name;
@@ -133,20 +131,19 @@ public:
 		Gfx(std::string k, std::string f, int32_t _a, int32_t _s);
 		bool operator==(const Gfx &rhs) const;
 
-		void CompileFunc(StdCompiler *pComp);
+		void CompileFunc(StdCompiler *comp);
 	};
 	using Gfxs  = std::map<std::string, Gfx>;
 	using Bars  = std::vector<C4EnergyBarDef>;
 	using Names = std::unordered_map<std::string, int32_t>;
 
-	C4EnergyBarsDef();
+	C4EnergyBarsDef() = default;
 	C4EnergyBarsDef(const Gfxs &_gfxs, const Bars &_bars);
 	C4EnergyBarsDef(const Gfxs &_gfxs, const Bars &_bars, const Names &_names);
 
 	C4EnergyBarsDef(const C4EnergyBarsDef &other) = default;
 	C4EnergyBarsDef(C4EnergyBarsDef& other) = default;
 	C4EnergyBarsDef(C4EnergyBarsDef&& other) = default;
-	~C4EnergyBarsDef();
 
 	static bool PopulateNamesFromValues(const Bars &bars, Names &names);
 	C4EnergyBarsDef& operator=(C4EnergyBarsDef&& other) = default;
@@ -175,13 +172,10 @@ namespace std
 class C4EnergyBarsUniquifier
 {
 public:
-	C4EnergyBarsUniquifier() {}
-	~C4EnergyBarsUniquifier() {}
-
 	std::shared_ptr<C4EnergyBars> DefaultBars();
 	void RemoveDef(const C4EnergyBarsDef &def);
 
-	std::shared_ptr<C4FacetExID>     GetFacet(const C4EnergyBarsDef::Gfxs &gfx, const char *file);
+	std::shared_ptr<C4FacetExID>     GetFacet(const C4EnergyBarsDef::Gfxs &gfx, std::string_view file);
 	std::shared_ptr<C4EnergyBarsDef> UniqueifyDefinition(C4EnergyBarsDef *definition);
 	std::shared_ptr<C4EnergyBars>    Instantiate(std::shared_ptr<C4EnergyBarsDef> definition);
 	std::shared_ptr<C4EnergyBars>    DefineEnergyBars(C4ValueHash* graphics, C4ValueArray *definition);
@@ -194,21 +188,21 @@ private:
 	std::unordered_map<std::string, std::weak_ptr<C4FacetExID>>         graphics;
 	std::unordered_map<C4EnergyBarsDef, std::weak_ptr<C4EnergyBarsDef>> definitions;
 
-	std::shared_ptr<C4EnergyBars> defaultbars;
+	std::shared_ptr<C4EnergyBars> defaultBars;
 };
 
 
 class C4EnergyBarsAdapt
 {
 protected:
-	std::shared_ptr<C4EnergyBars> &pBars;
+	std::shared_ptr<C4EnergyBars> &bars;
 
 public:
-	C4EnergyBarsAdapt(std::shared_ptr<C4EnergyBars> &_bars): pBars(_bars) {}
-	void CompileFunc(StdCompiler *pComp);
+	C4EnergyBarsAdapt(std::shared_ptr<C4EnergyBars> &_bars): bars(_bars) {}
+	void CompileFunc(StdCompiler *comp);
 
 	// Default checking / setting
-	bool operator==(std::shared_ptr<C4EnergyBars> pDefault) { return pBars == pDefault; }
-	void operator=(std::shared_ptr<C4EnergyBars> pDefault)  { pBars = pDefault; }
+	bool operator==(std::shared_ptr<C4EnergyBars> pDefault) { return bars == pDefault; }
+	void operator=(std::shared_ptr<C4EnergyBars> pDefault)  { bars = pDefault; }
 };
 

@@ -148,7 +148,7 @@ void C4Object::Default()
 	FirstRef = nullptr;
 	pGfxOverlay = nullptr;
 	iLastAttachMovementFrame = -1;
-	pEnergyBars = Game.EnergyBars.DefaultBars();
+	energyBars = Game.EnergyBars.DefaultBars();
 }
 
 bool C4Object::Init(C4Def *pDef, C4Object *pCreator,
@@ -2682,19 +2682,19 @@ void C4Object::DrawLine(C4FacetEx &cgo)
 	FinishedDrawing();
 }
 
-bool C4Object::DefineEnergyBars(C4ValueHash* graphics, C4ValueArray *definition)
+bool C4Object::DefineEnergyBars(C4ValueHash *graphics, C4ValueArray *definition)
 {
 	// If null pointer is given restore default energy bars
 	if (!graphics || !definition)
 	{
-		pEnergyBars = Game.EnergyBars.DefaultBars();
+		energyBars = Game.EnergyBars.DefaultBars();
 		return true;
 	}
 
 	auto bars = Game.EnergyBars.DefineEnergyBars(graphics, definition);
 	if (bars != nullptr)
 	{
-		pEnergyBars = bars;
+		energyBars = bars;
 		return true;
 	}
 	return false;
@@ -2702,17 +2702,17 @@ bool C4Object::DefineEnergyBars(C4ValueHash* graphics, C4ValueArray *definition)
 
 void C4Object::SetEnergyBar(const char* name, int32_t value, int32_t max)
 {
-	pEnergyBars->SetEnergyBar(name, value, max);
+	energyBars->SetEnergyBar(name, value, max);
 }
 
-void C4Object::SetEnergyBarVisible(const char* name, bool fVisible)
+void C4Object::SetEnergyBarVisible(const char* name, bool visible)
 {
-	pEnergyBars->SetEnergyBarVisible(name, fVisible);
+	energyBars->SetEnergyBarVisible(name, visible);
 }
 
 void C4Object::DrawEnergyBars(C4Facet &cgo)
 {
-	pEnergyBars->DrawEnergyBars(cgo, *this);
+	energyBars->DrawEnergyBars(cgo, *this);
 }
 
 void C4Object::CompileFunc(StdCompiler *pComp)
@@ -2806,7 +2806,7 @@ void C4Object::CompileFunc(StdCompiler *pComp)
 	pComp->Value(mkNamingPtrAdapt(pDrawTransform,                       "DrawTransform"));
 	pComp->Value(mkNamingPtrAdapt(pEffects,                             "Effects"));
 	pComp->Value(mkNamingAdapt(C4GraphicsOverlayListAdapt(pGfxOverlay), "GfxOverlay",         nullptr));
-	pComp->Value(mkNamingAdapt(C4EnergyBarsAdapt(pEnergyBars), "EnergyBars", Game.EnergyBars.DefaultBars()));
+	pComp->Value(mkNamingAdapt(C4EnergyBarsAdapt(energyBars), "EnergyBars", Game.EnergyBars.DefaultBars()));
 
 
 	if (PhysicalTemporary)

@@ -90,11 +90,11 @@ bool C4EnergyBar::operator==(const C4EnergyBar &rhs) const
 	return value == rhs.value && max == rhs.max && visible == rhs.visible;
 }
 
-void C4EnergyBar::CompileFunc(StdCompiler *pComp)
+void C4EnergyBar::CompileFunc(StdCompiler *comp)
 {
-	pComp->Value(mkNamingAdapt(value, "Value", 0));
-	pComp->Value(mkNamingAdapt(max, "Max", 1000000));
-	pComp->Value(mkNamingAdapt(visible, "Visible", true));
+	comp->Value(mkNamingAdapt(value, "Value", 0));
+	comp->Value(mkNamingAdapt(max, "Max", 1000000));
+	comp->Value(mkNamingAdapt(visible, "Visible", true));
 }
 
 
@@ -104,7 +104,7 @@ C4EnergyBars::C4EnergyBars(std::shared_ptr<C4EnergyBarsDef> _def):def(_def) {
 			values.emplace_back(bardef.value, bardef.max, bardef.visible);
 }
 
-C4EnergyBar* C4EnergyBars::BarVal(const std::string &name) {
+C4EnergyBar *C4EnergyBars::BarVal(const std::string &name) {
 	try
 	{
 		const auto index = def->names.at(name);
@@ -210,18 +210,15 @@ C4EnergyBarDef::C4EnergyBarDef():
 	value_index(-1), value(0), max(1000000), visible(true), scale(1.0f)
 {}
 
-C4EnergyBarDef::C4EnergyBarDef(const char *_name, const char *_gfx, const std::shared_ptr<C4FacetExID> &_facet, int32_t _index, int32_t _physical):
+C4EnergyBarDef::C4EnergyBarDef(std::string_view _name, std::string_view _gfx, const std::shared_ptr<C4FacetExID> &_facet, int32_t _index, int32_t _physical):
 	name(_name), physical(_physical), hide(DefaultHide(physical)),
 	gfx(_gfx), facet(_facet), index(_index), advance(true),
 	value_index(-1), value(0), max(1000000), visible(true), scale(1.0f)
 {}
 
-C4EnergyBarDef::~C4EnergyBarDef()
-{}
-
 bool C4EnergyBarDef::operator==(const C4EnergyBarDef &rhs) const
 {
-	return (
+	return
 		name == rhs.name &&
 		physical == rhs.physical &&
 		hide == rhs.hide &&
@@ -231,22 +228,14 @@ bool C4EnergyBarDef::operator==(const C4EnergyBarDef &rhs) const
 		advance == rhs.advance &&
 		value == rhs.value &&
 		max == rhs.max &&
-		visible == rhs.visible
-	);
-}
-
-int32_t C4EnergyBarDef::PhysicalFromName(std::string name) {
-	if(name == "Energy") return EBP_Energy;
-	if(name == "Magic")  return EBP_Magic;
-	if(name == "Breath") return EBP_Breath;
-	return EBP_None;
+		visible == rhs.visible;
 }
 
 int32_t C4EnergyBarDef::DefaultHide(int32_t physical) {
 	switch (physical)
 	{
 	case EBP_Energy: return EBH_Never | EBH_HideHUDBars;
-	case EBP_Breath: return EBH_EmptyFull | EBH_HideHUDBars; // TODO shouldn't it be only hide full? compare with old code
+	case EBP_Breath: return EBH_Full | EBH_HideHUDBars;
 	case EBP_Magic:
 	default:
 		return EBH_Empty | EBH_HideHUDBars;
@@ -279,18 +268,18 @@ std::size_t C4EnergyBarDef::GetHash() const
 	return result;
 }
 
-void C4EnergyBarDef::CompileFunc(StdCompiler *pComp)
+void C4EnergyBarDef::CompileFunc(StdCompiler *comp)
 {
-	pComp->Value(mkNamingAdapt(name, "Name"));
-	pComp->Value(mkNamingAdapt(physical, "Physical", 0));
-	pComp->Value(mkNamingAdapt(hide, "Hide", 1));
-	pComp->Value(mkNamingAdapt(gfx, "Gfx"));
-	pComp->Value(mkNamingAdapt(index, "Index"));
-	pComp->Value(mkNamingAdapt(advance, "Advance", true));
-	pComp->Value(mkNamingAdapt(value_index, "ValueIndex", -1));
-	pComp->Value(mkNamingAdapt(value, "Value", 0));
-	pComp->Value(mkNamingAdapt(max, "Max", 1000000));
-	pComp->Value(mkNamingAdapt(visible, "Visible", true));
+	comp->Value(mkNamingAdapt(name, "Name"));
+	comp->Value(mkNamingAdapt(physical, "Physical", 0));
+	comp->Value(mkNamingAdapt(hide, "Hide", 1));
+	comp->Value(mkNamingAdapt(gfx, "Gfx"));
+	comp->Value(mkNamingAdapt(index, "Index"));
+	comp->Value(mkNamingAdapt(advance, "Advance", true));
+	comp->Value(mkNamingAdapt(value_index, "ValueIndex", -1));
+	comp->Value(mkNamingAdapt(value, "Value", 0));
+	comp->Value(mkNamingAdapt(max, "Max", 1000000));
+	comp->Value(mkNamingAdapt(visible, "Visible", true));
 	// gfx and scale are restored from def.gfxs
 }
 
@@ -315,16 +304,13 @@ bool C4EnergyBarsDef::Gfx::operator==(const Gfx &rhs) const
 	return key == rhs.key && file == rhs.file && amount == rhs.amount && scale == rhs.scale;
 }
 
-void C4EnergyBarsDef::Gfx::CompileFunc(StdCompiler *pComp)
+void C4EnergyBarsDef::Gfx::CompileFunc(StdCompiler *comp)
 {
-	pComp->Value(mkNamingAdapt(key, "Key"));
-	pComp->Value(mkNamingAdapt(file, "File"));
-	pComp->Value(mkNamingAdapt(amount, "Amount"));
-	pComp->Value(mkNamingAdapt(scale, "Scale"));
+	comp->Value(mkNamingAdapt(key, "Key"));
+	comp->Value(mkNamingAdapt(file, "File"));
+	comp->Value(mkNamingAdapt(amount, "Amount"));
+	comp->Value(mkNamingAdapt(scale, "Scale"));
 }
-
-C4EnergyBarsDef::C4EnergyBarsDef(): gfxs(), bars()
-{}
 
 C4EnergyBarsDef::C4EnergyBarsDef(const Gfxs &_gfxs, const Bars &_bars): gfxs(_gfxs), bars(_bars)
 {
@@ -333,10 +319,6 @@ C4EnergyBarsDef::C4EnergyBarsDef(const Gfxs &_gfxs, const Bars &_bars): gfxs(_gf
 }
 
 C4EnergyBarsDef::C4EnergyBarsDef(const Gfxs &_gfxs, const C4EnergyBarsDef::Bars &_bars, const C4EnergyBarsDef::Names &_names): gfxs(_gfxs), bars(_bars), names(_names)
-{
-}
-
-C4EnergyBarsDef::~C4EnergyBarsDef()
 {
 }
 
@@ -387,9 +369,9 @@ std::size_t std::hash<C4EnergyBarsDef>::operator()(const C4EnergyBarsDef &value)
 
 std::shared_ptr<C4EnergyBars> C4EnergyBarsUniquifier::DefaultBars()
 {
-	if(!defaultbars)
+	if(!defaultBars)
 	{
-		const char* file = "EnergyBars";
+		const auto file = "EnergyBars";
 		auto gfxs = C4EnergyBarsDef::Gfxs{{file, C4EnergyBarsDef::Gfx(file, file, 3, 100)}};
 		auto gfx = GetFacet(gfxs, file);
 		auto def = UniqueifyDefinition(
@@ -400,10 +382,10 @@ std::shared_ptr<C4EnergyBars> C4EnergyBarsUniquifier::DefaultBars()
 		      C4EnergyBarDef("Magic",  file, gfx, 1, C4EnergyBarDef::EBP_Magic),
 		      C4EnergyBarDef("Breath", file, gfx, 2, C4EnergyBarDef::EBP_Breath)
 		}));
-		defaultbars = Instantiate(def);
+		defaultBars = Instantiate(def);
 	}
 
-	return defaultbars;
+	return defaultBars;
 }
 
 void C4EnergyBarsUniquifier::RemoveDef(const C4EnergyBarsDef &def)
@@ -411,13 +393,13 @@ void C4EnergyBarsUniquifier::RemoveDef(const C4EnergyBarsDef &def)
 	definitions.erase(def);
 }
 
-std::shared_ptr<C4FacetExID> C4EnergyBarsUniquifier::GetFacet(const C4EnergyBarsDef::Gfxs &gfxs, const char *gfx)
+std::shared_ptr<C4FacetExID> C4EnergyBarsUniquifier::GetFacet(const C4EnergyBarsDef::Gfxs &gfxs, std::string_view gfx)
 {
 	std::string key(gfx);
 
 	try
 	{
-		auto facet = graphics.at(key).lock();
+		const auto facet = graphics.at(key).lock();
 		if(facet) return facet;
 	}
 	catch (const std::out_of_range &)
@@ -439,14 +421,14 @@ std::shared_ptr<C4FacetExID> C4EnergyBarsUniquifier::GetFacet(const C4EnergyBars
 	}
 	catch (const std::out_of_range &)
 	{
-		LogF("DefineEnergyBars: Missing key '%s' in graphics definition", key.c_str());
+		LogF("DefineEnergyBars: Missing key \"%s\" in graphics definition", key.c_str());
 		return nullptr;
 	}
 
 	// TODO FIXME why wasn't this already called before we get here?
 	Game.GraphicsResource.RegisterMainGroups();
 
-	auto facet = std::shared_ptr<C4FacetExID>(new C4FacetExID(), [=](C4FacetExID* facet){graphics.erase(key);});
+	auto facet = std::shared_ptr<C4FacetExID>(new C4FacetExID(), [=](C4FacetExID *facet){graphics.erase(key);});
 	bool success = Game.GraphicsResource.LoadFile(*facet, file.c_str(), Game.GraphicsResource.Files);
 	if(!success)
 	{
@@ -471,7 +453,7 @@ std::shared_ptr<C4EnergyBarsDef> C4EnergyBarsUniquifier::UniqueifyDefinition(C4E
 	// or goes out of scope deleting the definition
 
 	// the weak ptr remembers the custom deleter
-	auto shared = std::shared_ptr<C4EnergyBarsDef>(definition, [=](C4EnergyBarsDef* def){definitions.erase(*def);});
+	auto shared = std::shared_ptr<C4EnergyBarsDef>(definition, [=](C4EnergyBarsDef *def){definitions.erase(*def);});
 	auto it_success = definitions.emplace(*definition, std::weak_ptr<C4EnergyBarsDef>(shared));
 	if (!it_success.second)
 	{
@@ -488,7 +470,7 @@ std::shared_ptr<C4EnergyBars> C4EnergyBarsUniquifier::Instantiate(std::shared_pt
 	return std::make_shared<C4EnergyBars>(definition);
 }
 
-std::shared_ptr<C4EnergyBars> C4EnergyBarsUniquifier::DefineEnergyBars(C4ValueHash* graphics, C4ValueArray *definition)
+std::shared_ptr<C4EnergyBars> C4EnergyBarsUniquifier::DefineEnergyBars(C4ValueHash *graphics, C4ValueArray *definition)
 {
 	if (!graphics)
 	{
@@ -517,8 +499,9 @@ std::shared_ptr<C4EnergyBars> C4EnergyBarsUniquifier::DefineEnergyBars(C4ValueHa
 
 bool C4EnergyBarsUniquifier::ProcessGraphics(C4ValueHash &map, C4EnergyBarsDef::Gfxs &gfx)
 {
-	const auto amount = C4VString("amount");
-	const auto scale  = C4VString("scale");
+	const auto keyAmount = C4VString("amount");
+	const auto keyScale  = C4VString("scale");
+	const auto keyFile   = C4VString("file");
 
 	C4ValueHash::Iterator end = map.end();
 	for (C4ValueHash::Iterator it = map.begin(); it != end; ++it)
@@ -530,16 +513,16 @@ bool C4EnergyBarsUniquifier::ProcessGraphics(C4ValueHash &map, C4EnergyBarsDef::
 		auto *_val = val.getMap();
 		auto &m = *_val;
 
-		C4Value file = m[C4VString("file")];
+		C4Value file = m[keyFile];
 		auto _file = _key;
 		if (file != C4VNull) _file = file.getStr()->Data.getData();
 
-		int32_t _amount = m[amount].getInt();
-		int32_t _scale  = m[scale].getInt();
-		if (_amount == 0) _amount = 1;
-		if (_scale == 0) _scale = 100;
+		int32_t amount = m[keyAmount].getInt();
+		int32_t scale  = m[keyScale].getInt();
+		if (amount == 0) amount = 1;
+		if (scale == 0) scale = 100;
 
-		auto it_success = gfx.emplace(_key, C4EnergyBarsDef::Gfx(_key, _file, _amount, _scale));
+		auto it_success = gfx.emplace(_key, C4EnergyBarsDef::Gfx(_key, _file, amount, scale));
 		if (!it_success.second)
 		{
 			LogF("DefineEnergyBars %s duplicate key in gfx description ", _key);
@@ -559,9 +542,7 @@ bool C4EnergyBarsUniquifier::ProcessGroup(int32_t &value_index, const C4EnergyBa
 		switch (element.GetType())
 		{
 		case C4V_Map:
-			{ // sepparate scope
-			auto *map = element.getMap();
-			if (map)
+			if (const auto *map = element.getMap(); map)
 			{
 				if (!ProcessEnergyBar(value_index, graphics, *map, bars, advanceAlways || i == size-1)) return false;
 			}
@@ -571,12 +552,10 @@ bool C4EnergyBarsUniquifier::ProcessGroup(int32_t &value_index, const C4EnergyBa
 				return false;
 			}
 			break;
-			}
 		case C4V_Array:
 			if(advanceAlways)
 			{
-				auto *array = element.getArray();
-				if (array)
+				if (const auto *array = element.getArray(); array)
 				{
 					if(!ProcessGroup(value_index, graphics, *array, bars, false)) return false;
 				}
@@ -700,39 +679,39 @@ bool C4EnergyBarsUniquifier::ProcessEnergyBar(int32_t &value_index, const C4Ener
 }
 
 
-void C4EnergyBarsAdapt::CompileFunc(StdCompiler *pComp) {
-	bool fCompiler = pComp->isCompiler();
+void C4EnergyBarsAdapt::CompileFunc(StdCompiler *comp) {
+	bool fCompiler = comp->isCompiler();
 
 	if (!fCompiler)
 	{
-		// serialize
-		if (pBars)
+		if (bars)
 		{
 			std::vector<C4EnergyBarsDef::Gfx> temp;
-			for (auto it: pBars->def->gfxs)
+			for (auto it: bars->def->gfxs)
 				temp.push_back(it.second);
 
-			pComp->Value(mkNamingAdapt(mkSTLContainerAdapt(temp), "Gfx", std::vector<C4EnergyBarsDef::Gfx>{}));
-			pComp->Value(mkNamingAdapt(mkSTLContainerAdapt(pBars->def->bars), "Def", C4EnergyBarsDef::Bars{}));
-			pComp->Value(mkNamingAdapt(mkSTLContainerAdapt(pBars->values), "Bar", std::vector<C4EnergyBar>{}));
+			comp->Value(mkNamingAdapt(mkSTLContainerAdapt(temp), "Gfx", std::vector<C4EnergyBarsDef::Gfx>{}));
+			comp->Value(mkNamingAdapt(mkSTLContainerAdapt(bars->def->bars), "Def", C4EnergyBarsDef::Bars{}));
+			comp->Value(mkNamingAdapt(mkSTLContainerAdapt(bars->values), "Bar", std::vector<C4EnergyBar>{}));
 		}
 
 	}
 	else
 	{
-		// deserialize
-		C4EnergyBarsDef::Gfxs gfxs{};
-		std::vector<C4EnergyBarsDef::Gfx> temp;
-		pComp->Value(mkNamingAdapt(mkSTLContainerAdapt(temp), "Gfx", std::vector<C4EnergyBarsDef::Gfx>{}));
-		for (auto &gfx: temp)
-			gfxs.emplace(gfx.key, gfx);
-
-		C4EnergyBarsDef::Bars bars{};
-		pComp->Value(mkNamingAdapt(mkSTLContainerAdapt(bars), "Def", C4EnergyBarsDef::Bars{}));
-
 		C4EnergyBarsDef *def = new C4EnergyBarsDef();
-		def->gfxs.swap(gfxs);
-		def->bars.swap(bars);
+		{
+			C4EnergyBarsDef::Gfxs gfxs{};
+			std::vector<C4EnergyBarsDef::Gfx> temp;
+			comp->Value(mkNamingAdapt(mkSTLContainerAdapt(temp), "Gfx", std::vector<C4EnergyBarsDef::Gfx>{}));
+			for (auto &gfx: temp)
+				gfxs.emplace(gfx.key, gfx);
+
+			C4EnergyBarsDef::Bars bars{};
+			comp->Value(mkNamingAdapt(mkSTLContainerAdapt(bars), "Def", C4EnergyBarsDef::Bars{}));
+
+			def->gfxs.swap(gfxs);
+			def->bars.swap(bars);
+		}
 
 		// get facets and restore scale from gfxs
 		for (auto &bar: def->bars)
@@ -744,9 +723,9 @@ void C4EnergyBarsAdapt::CompileFunc(StdCompiler *pComp) {
 
 		auto uniq_def = Game.EnergyBars.UniqueifyDefinition(def);
 		auto instance = Game.EnergyBars.Instantiate(uniq_def);
-		pComp->Value(mkNamingAdapt(mkSTLContainerAdapt(instance->values), "Bar", std::vector<C4EnergyBar>{}));
+		comp->Value(mkNamingAdapt(mkSTLContainerAdapt(instance->values), "Bar", std::vector<C4EnergyBar>{}));
 
-		pBars = instance;
+		bars = instance;
 	}
 }
 
