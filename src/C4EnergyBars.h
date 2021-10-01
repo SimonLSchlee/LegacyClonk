@@ -56,11 +56,11 @@ public:
 	C4EnergyBars(std::shared_ptr<C4EnergyBarsDef> _def);
 
 	void DrawEnergyBars(C4Facet &cgo, C4Object &obj);
-	void SetEnergyBar(std::string name, int32_t value, int32_t max = 0);
-	void SetEnergyBarVisible(std::string name, bool visible);
+	void SetEnergyBar(const std::string &name, int32_t value, int32_t max = 0);
+	void SetEnergyBarVisible(const std::string &name, bool visible);
 
 private:
-	C4EnergyBar* BarVal(std::string name);
+	C4EnergyBar* BarVal(const std::string &name);
 };
 
 
@@ -181,15 +181,15 @@ public:
 	std::shared_ptr<C4EnergyBars> DefaultBars();
 	void RemoveDef(const C4EnergyBarsDef &def);
 
-	std::shared_ptr<C4FacetExID>     GetFacet(C4EnergyBarsDef::Gfxs &gfx, const char *file);
+	std::shared_ptr<C4FacetExID>     GetFacet(const C4EnergyBarsDef::Gfxs &gfx, const char *file);
 	std::shared_ptr<C4EnergyBarsDef> UniqueifyDefinition(C4EnergyBarsDef *definition);
 	std::shared_ptr<C4EnergyBars>    Instantiate(std::shared_ptr<C4EnergyBarsDef> definition);
 	std::shared_ptr<C4EnergyBars>    DefineEnergyBars(C4ValueHash* graphics, C4ValueArray *definition);
 
 private:
 	bool ProcessGraphics(C4ValueHash &map, C4EnergyBarsDef::Gfxs &gfx);
-	bool ProcessGroup(int32_t &value_index, C4EnergyBarsDef::Gfxs &graphics, const C4ValueArray &group, C4EnergyBarsDef::Bars &bars, bool advanceAlways);
-	bool ProcessEnergyBar(int32_t &value_index, C4EnergyBarsDef::Gfxs &graphics, const C4ValueHash &bar, C4EnergyBarsDef::Bars &bars, bool advance);
+	bool ProcessGroup(int32_t &value_index, const C4EnergyBarsDef::Gfxs &graphics, const C4ValueArray &group, C4EnergyBarsDef::Bars &bars, bool advanceAlways);
+	bool ProcessEnergyBar(int32_t &value_index, const C4EnergyBarsDef::Gfxs &graphics, const C4ValueHash &bar, C4EnergyBarsDef::Bars &bars, bool advance);
 
 	std::unordered_map<std::string, std::weak_ptr<C4FacetExID>>         graphics;
 	std::unordered_map<C4EnergyBarsDef, std::weak_ptr<C4EnergyBarsDef>> definitions;

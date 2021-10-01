@@ -99,15 +99,15 @@ void C4EnergyBar::CompileFunc(StdCompiler *pComp)
 
 
 C4EnergyBars::C4EnergyBars(std::shared_ptr<C4EnergyBarsDef> _def):def(_def) {
-	for (auto bardef: def->bars)
+	for (const auto &bardef: def->bars)
 		if (bardef.physical == 0)
 			values.emplace_back(bardef.value, bardef.max, bardef.visible);
 }
 
-C4EnergyBar* C4EnergyBars::BarVal(std::string name) {
+C4EnergyBar* C4EnergyBars::BarVal(const std::string &name) {
 	try
 	{
-		auto index = def->names.at(name);
+		const auto index = def->names.at(name);
 		auto &bardef = def->bars.at(index);
 		if (bardef.value_index >= 0)
 		{
@@ -120,7 +120,7 @@ C4EnergyBar* C4EnergyBars::BarVal(std::string name) {
 	return nullptr;
 }
 
-void C4EnergyBars::SetEnergyBar(std::string name, int32_t value, int32_t max)
+void C4EnergyBars::SetEnergyBar(const std::string &name, int32_t value, int32_t max)
 {
 	auto *barval = BarVal(name);
 	if (barval)
@@ -130,7 +130,7 @@ void C4EnergyBars::SetEnergyBar(std::string name, int32_t value, int32_t max)
 	}
 }
 
-void C4EnergyBars::SetEnergyBarVisible(std::string name, bool visible)
+void C4EnergyBars::SetEnergyBarVisible(const std::string &name, bool visible)
 {
 	auto *barval = BarVal(name);
 	if (barval)
@@ -139,30 +139,30 @@ void C4EnergyBars::SetEnergyBarVisible(std::string name, bool visible)
 
 void C4EnergyBars::DrawEnergyBars(C4Facet &cgo, C4Object &obj)
 {
-	bool fNeedsAdvance = false;
-	int32_t iMaxWidth = 0;
+	bool needsAdvance = false;
+	int32_t maxWidth = 0;
 
-	for (auto &bardef: def->bars)
+	for (const auto &bardef: def->bars)
 	{
 		int32_t value = 0;
 		int32_t max   = 0;
-		bool fVisible = true;
-		bool hideHUDBars = bardef.hide & C4EnergyBarDef::EBH_HideHUDBars;
+		bool visible = true;
+		const bool hideHUDBars = bardef.hide & C4EnergyBarDef::EBH_HideHUDBars;
 
 		switch(bardef.physical)
 		{
 		case C4EnergyBarDef::EBP_Energy:
-			if (hideHUDBars && obj.Def->HideHUDBars & C4Def::HB_Energy) fVisible = false;
+			if (hideHUDBars && obj.Def->HideHUDBars & C4Def::HB_Energy) visible = false;
 			value = obj.Energy;
 			max = obj.GetPhysical()->Energy;
 			break;
 		case C4EnergyBarDef::EBP_Breath:
-			if (hideHUDBars && obj.Def->HideHUDBars & C4Def::HB_Breath) fVisible = false;
+			if (hideHUDBars && obj.Def->HideHUDBars & C4Def::HB_Breath) visible = false;
 			value = obj.Breath;
 			max = obj.GetPhysical()->Breath;
 			break;
 		case C4EnergyBarDef::EBP_Magic:
-			if (hideHUDBars && obj.Def->HideHUDBars & C4Def::HB_MagicEnergy) fVisible = false;
+			if (hideHUDBars && obj.Def->HideHUDBars & C4Def::HB_MagicEnergy) visible = false;
 			// draw in units of MagicPhysicalFactor, so you can get a full magic energy bar by script even if partial magic energy training is not fulfilled
 			value = obj.MagicEnergy / MagicPhysicalFactor;
 			max = obj.GetPhysical()->Magic / MagicPhysicalFactor;
@@ -171,18 +171,18 @@ void C4EnergyBars::DrawEnergyBars(C4Facet &cgo, C4Object &obj)
 			auto &barval = values.at(bardef.value_index);
 			value = barval.value;
 			max   = barval.max;
-			fVisible = barval.visible;
+			visible = barval.visible;
 			break;
 		}
 
-		if (bardef.hide & C4EnergyBarDef::EBH_Empty && value == 0)   fVisible = false;
-		if (bardef.hide & C4EnergyBarDef::EBH_Full  && value >= max) fVisible = false;
+		if (bardef.hide & C4EnergyBarDef::EBH_Empty && value == 0)   visible = false;
+		if (bardef.hide & C4EnergyBarDef::EBH_Full  && value >= max) visible = false;
 
-		if (!fVisible)
+		if (!visible)
 		{
-			if (fNeedsAdvance && bardef.advance)
+			if (needsAdvance && bardef.advance)
 			{
-				cgo.X += iMaxWidth; iMaxWidth = 0; fNeedsAdvance = false;
+				cgo.X += maxWidth; maxWidth = 0; needsAdvance = false;
 			}
 			continue;
 		}
@@ -191,14 +191,14 @@ void C4EnergyBars::DrawEnergyBars(C4Facet &cgo, C4Object &obj)
 		cgo.Wdt = width;
 		cgo.DrawEnergyLevelEx(value, max, *bardef.facet, bardef.index, bardef.scale);
 
-		iMaxWidth = std::max<int32_t>(iMaxWidth, width+1);
+		maxWidth = std::max<int32_t>(maxWidth, width+1);
 		if (bardef.advance)
 		{
-			cgo.X += iMaxWidth; iMaxWidth = 0; fNeedsAdvance = false;
+			cgo.X += maxWidth; maxWidth = 0; needsAdvance = false;
 		}
 		else
 		{
-			fNeedsAdvance = true;
+			needsAdvance = true;
 		}
 	}
 }
@@ -411,7 +411,7 @@ void C4EnergyBarsUniquifier::RemoveDef(const C4EnergyBarsDef &def)
 	definitions.erase(def);
 }
 
-std::shared_ptr<C4FacetExID> C4EnergyBarsUniquifier::GetFacet(C4EnergyBarsDef::Gfxs &gfxs, const char *gfx)
+std::shared_ptr<C4FacetExID> C4EnergyBarsUniquifier::GetFacet(const C4EnergyBarsDef::Gfxs &gfxs, const char *gfx)
 {
 	std::string key(gfx);
 
@@ -517,8 +517,8 @@ std::shared_ptr<C4EnergyBars> C4EnergyBarsUniquifier::DefineEnergyBars(C4ValueHa
 
 bool C4EnergyBarsUniquifier::ProcessGraphics(C4ValueHash &map, C4EnergyBarsDef::Gfxs &gfx)
 {
-	auto amount = C4VString("amount");
-	auto scale  = C4VString("scale");
+	const auto amount = C4VString("amount");
+	const auto scale  = C4VString("scale");
 
 	C4ValueHash::Iterator end = map.end();
 	for (C4ValueHash::Iterator it = map.begin(); it != end; ++it)
@@ -550,7 +550,7 @@ bool C4EnergyBarsUniquifier::ProcessGraphics(C4ValueHash &map, C4EnergyBarsDef::
 	return true;
 }
 
-bool C4EnergyBarsUniquifier::ProcessGroup(int32_t &value_index, C4EnergyBarsDef::Gfxs &graphics, const C4ValueArray &group, C4EnergyBarsDef::Bars &bars, bool advanceAlways)
+bool C4EnergyBarsUniquifier::ProcessGroup(int32_t &value_index, const C4EnergyBarsDef::Gfxs &graphics, const C4ValueArray &group, C4EnergyBarsDef::Bars &bars, bool advanceAlways)
 {
 	int32_t size = group.GetSize();
 	for (int32_t i = 0; i < size; ++i)
@@ -602,7 +602,7 @@ bool C4EnergyBarsUniquifier::ProcessGroup(int32_t &value_index, C4EnergyBarsDef:
 	return true;
 }
 
-bool C4EnergyBarsUniquifier::ProcessEnergyBar(int32_t &value_index, C4EnergyBarsDef::Gfxs &graphics, const C4ValueHash &bar, C4EnergyBarsDef::Bars &bars, bool advance)
+bool C4EnergyBarsUniquifier::ProcessEnergyBar(int32_t &value_index, const C4EnergyBarsDef::Gfxs &graphics, const C4ValueHash &bar, C4EnergyBarsDef::Bars &bars, bool advance)
 {
 	C4Value name = bar[C4VString("name")];
 	auto *_name = name.getStr();
