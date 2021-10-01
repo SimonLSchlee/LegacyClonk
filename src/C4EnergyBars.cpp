@@ -680,9 +680,9 @@ bool C4EnergyBarsUniquifier::ProcessEnergyBar(int32_t &value_index, const C4Ener
 
 
 void C4EnergyBarsAdapt::CompileFunc(StdCompiler *comp) {
-	bool fCompiler = comp->isCompiler();
+	bool compiler = comp->isCompiler();
 
-	if (!fCompiler)
+	if (!compiler)
 	{
 		if (bars)
 		{

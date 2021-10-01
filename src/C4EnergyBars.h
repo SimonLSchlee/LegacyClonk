@@ -138,9 +138,10 @@ public:
 	C4EnergyBarsDef(const C4EnergyBarsDef &other) = default;
 	C4EnergyBarsDef(C4EnergyBarsDef& other) = default;
 	C4EnergyBarsDef(C4EnergyBarsDef&& other) = default;
+	C4EnergyBarsDef& operator=(const C4EnergyBarsDef& other) = default;
+	C4EnergyBarsDef& operator=(C4EnergyBarsDef&& other) = default;
 
 	static bool PopulateNamesFromValues(const Bars &bars, Names &names);
-	C4EnergyBarsDef& operator=(C4EnergyBarsDef&& other) = default;
 
 	bool operator==(const C4EnergyBarsDef &rhs) const;
 	std::size_t GetHash() const;
@@ -172,7 +173,7 @@ public:
 	std::shared_ptr<C4FacetExID>     GetFacet(const C4EnergyBarsDef::Gfxs &gfx, std::string_view file);
 	std::shared_ptr<C4EnergyBarsDef> UniqueifyDefinition(C4EnergyBarsDef *definition);
 	std::shared_ptr<C4EnergyBars>    Instantiate(std::shared_ptr<C4EnergyBarsDef> definition);
-	std::shared_ptr<C4EnergyBars>    DefineEnergyBars(C4ValueHash* graphics, C4ValueArray *definition);
+	std::shared_ptr<C4EnergyBars>    DefineEnergyBars(C4ValueHash *graphics, C4ValueArray *definition);
 
 private:
 	bool ProcessGraphics(C4ValueHash &map, C4EnergyBarsDef::Gfxs &gfx);
