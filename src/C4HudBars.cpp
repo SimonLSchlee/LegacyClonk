@@ -516,24 +516,27 @@ void C4HudBarsUniquifier::ProcessGraphics(C4AulContext *cthr, C4ValueHash &map, 
 
 	for (auto &[key, val] : map)
 	{
-		auto keyCopy = key;
-		if (!(keyCopy.ConvertTo(C4V_String) && keyCopy._getStr())) {
+		if (key.GetType() != C4V_String) {
 			throw C4AulExecError(cthr->Obj, "DefineHudBars: keys within maps are expected to be of type string");
 		}
-		auto _key = keyCopy._getStr()->Data.getData();
+		const auto keyStr = key._getStr();
+		const auto _key = keyStr->Data.getData();
 
-		auto *_val = val.getMap();
-		if (_val == nullptr) {
+		if (val.GetType() != C4V_Map)
+		{
 			throw C4AulExecError(cthr->Obj, FormatString("DefineHudBars: key \"%s\" is not a map, got: %s", _key, val.GetDataString().getData()).getData());
 		}
-		auto &m = *_val;
+		const auto _val = val._getMap();
+		const auto &m = *_val;
 
 		C4Value file = m[keyFile];
 		auto _file = _key;
 		if (file != C4VNull) _file = file.getStr()->Data.getData();
 
-		int32_t amount = m[keyAmount].getInt();
-		int32_t scale  = m[keyScale].getInt();
+		auto _amount = m[keyAmount];
+		auto _scale  = m[keyScale];
+		int32_t amount = _amount.getInt();
+		int32_t scale  = _scale.getInt();
 		if (amount == 0) amount = 1;
 		if (scale == 0) scale = 100;
 
