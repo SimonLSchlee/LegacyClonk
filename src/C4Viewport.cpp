@@ -942,7 +942,7 @@ void C4Viewport::DrawCursorInfo(C4FacetEx &cgo)
 
 			ccgo.Set(cgo.Surface, cgo.X + cx, cgo.Y + C4SymbolSize + 2 * C4SymbolBorder + iYOff, 0, cgo.Hgt - 3 * C4SymbolBorder - 2 * C4SymbolSize - iYOff);
 
-      cursor->DrawEnergyBars(ccgo);
+			cursor->DrawEnergyBars(ccgo);
 
 			C4ST_STOP(EnStat)
 		}
