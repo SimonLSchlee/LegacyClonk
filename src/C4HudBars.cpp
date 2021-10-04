@@ -394,7 +394,7 @@ std::shared_ptr<C4HudBars> C4HudBarsUniquifier::DefaultBars()
 {
 	if(!defaultBars)
 	{
-		const auto file = "HudBars";
+		const auto file = "EnergyBars";
 		auto gfxs = C4HudBarsDef::Gfxs{{file, C4HudBarsDef::Gfx(file, file, 3, 100)}};
 		auto gfx = GetFacet([=](StdStrBuf msg){LogFatal(FormatString("could not load DefaultBars \"%s\"", file).getData());}, gfxs, file);
 		auto def = UniqueifyDefinition(
