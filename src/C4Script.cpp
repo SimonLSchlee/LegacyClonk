@@ -1730,19 +1730,19 @@ static bool FnSetMenuTextProgress(C4AulContext *cthr, C4ValueInt iNewProgress, C
 static bool FnDefineEnergyBars(C4AulContext *cthr, C4ValueHash *pMap, C4ValueArray *pArray, C4Object *pObj)
 {
 	if (!pObj) pObj = cthr->Obj; if (!pObj) return false;
-	return pObj->DefineEnergyBars(pMap, pArray);
+	return pObj->DefineEnergyBars(cthr, pMap, pArray);
 }
 
 static void FnSetEnergyBar(C4AulContext *cthr, C4String *szName, C4ValueInt iNewValue, C4Object *pObj, C4ValueInt iNewMax)
 {
 	if (!pObj) pObj = cthr->Obj; if (!pObj) return;
-	return pObj->SetEnergyBar(FnStringPar(szName), iNewValue, iNewMax);
+	return pObj->SetEnergyBar(cthr, FnStringPar(szName), iNewValue, iNewMax);
 }
 
 static void FnSetEnergyBarVisible(C4AulContext *cthr, C4String *szName, bool fVisible, C4Object *pObj)
 {
 	if (!pObj) pObj = cthr->Obj; if (!pObj) return;
-	return pObj->SetEnergyBarVisible(FnStringPar(szName), fVisible);
+	return pObj->SetEnergyBarVisible(cthr, FnStringPar(szName), fVisible);
 }
 
 // Check / Status

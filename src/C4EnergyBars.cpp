@@ -104,7 +104,7 @@ C4EnergyBars::C4EnergyBars(std::shared_ptr<C4EnergyBarsDef> _def):def(_def) {
 			values.emplace_back(bardef.value, bardef.max, bardef.visible);
 }
 
-C4EnergyBar *C4EnergyBars::BarVal(const std::string &name) {
+C4EnergyBar *C4EnergyBars::BarVal(C4AulContext *cthr, const char *functionName, const std::string &name) {
 	try
 	{
 		const auto index = def->names.at(name);
@@ -113,28 +113,32 @@ C4EnergyBar *C4EnergyBars::BarVal(const std::string &name) {
 		{
 			return &values.at(bardef.value_index);
 		}
+		else
+		{
+			throw C4AulExecError(cthr->Obj, FormatString("%s: bar \"%s\" is based on physical and can not be set directly.", functionName, name.c_str()).getData());
+		}
 	}
 	catch (const std::out_of_range &)
 	{
+		throw C4AulExecError(cthr->Obj, FormatString("%s: bar \"%s\" was not defined.", functionName, name.c_str()).getData());
 	}
+
+	// should never get here
+	throw C4AulExecError(cthr->Obj, FormatString("%s: bar \"%s\" an unexpected error occured.", functionName, name.c_str()).getData());
 	return nullptr;
 }
 
-void C4EnergyBars::SetEnergyBar(const std::string &name, int32_t value, int32_t max)
+void C4EnergyBars::SetEnergyBar(C4AulContext *cthr, const std::string &name, int32_t value, int32_t max)
 {
-	auto *barval = BarVal(name);
-	if (barval)
-	{
-		barval->value = value;
-		if(max > 0) barval->max = max;
-	}
+	auto *barval = BarVal(cthr, "SetEnergyBar", name);
+	barval->value = value;
+	if(max > 0) barval->max = max;
 }
 
-void C4EnergyBars::SetEnergyBarVisible(const std::string &name, bool visible)
+void C4EnergyBars::SetEnergyBarVisible(C4AulContext *cthr, const std::string &name, bool visible)
 {
-	auto *barval = BarVal(name);
-	if (barval)
-		barval->visible = visible;
+	auto *barval = BarVal(cthr, "SetEnergyBarVisible", name);
+	barval->visible = visible;
 }
 
 void C4EnergyBars::DrawEnergyBars(C4Facet &cgo, C4Object &obj)
@@ -337,15 +341,14 @@ void C4EnergyBarsDef::Gfx::CompileFunc(StdCompiler *comp)
 
 C4EnergyBarsDef::C4EnergyBarsDef(const Gfxs &_gfxs, const Bars &_bars): gfxs(_gfxs), bars(_bars)
 {
-	// TODO exception / log fatal? if returns false?
-	PopulateNamesFromValues(bars, names);
+	PopulateNamesFromValues([=](StdStrBuf msg){LogFatal(msg.getData());}, bars, names);
 }
 
 C4EnergyBarsDef::C4EnergyBarsDef(const Gfxs &_gfxs, const C4EnergyBarsDef::Bars &_bars, const C4EnergyBarsDef::Names &_names): gfxs(_gfxs), bars(_bars), names(_names)
 {
 }
 
-bool C4EnergyBarsDef::PopulateNamesFromValues(const C4EnergyBarsDef::Bars &bars, C4EnergyBarsDef::Names &names)
+void C4EnergyBarsDef::PopulateNamesFromValues(const std::function<void(StdStrBuf)> &error, const C4EnergyBarsDef::Bars &bars, C4EnergyBarsDef::Names &names)
 {
 	int32_t i = 0;
 	for (auto bar: bars)
@@ -353,13 +356,10 @@ bool C4EnergyBarsDef::PopulateNamesFromValues(const C4EnergyBarsDef::Bars &bars,
 		auto success = names.emplace(bar.name, i);
 		if (!success.second)
 		{
-			LogF("C4EnergyBarsDef %s definition, names must be unique, duplicate detected", bar.name.c_str());
-			return false;
+			error(FormatString("C4EnergyBarsDef %s definition, names must be unique, duplicate detected", bar.name.c_str()));
 		}
 		++i;
 	}
-
-	return true;
 }
 
 bool C4EnergyBarsDef::operator==(const C4EnergyBarsDef &rhs) const
@@ -396,7 +396,7 @@ std::shared_ptr<C4EnergyBars> C4EnergyBarsUniquifier::DefaultBars()
 	{
 		const auto file = "EnergyBars";
 		auto gfxs = C4EnergyBarsDef::Gfxs{{file, C4EnergyBarsDef::Gfx(file, file, 3, 100)}};
-		auto gfx = GetFacet(gfxs, file);
+		auto gfx = GetFacet([=](StdStrBuf msg){LogFatal(FormatString("could not load DefaultBars \"%s\"", file).getData());}, gfxs, file);
 		auto def = UniqueifyDefinition(
 		  new C4EnergyBarsDef(
 		    gfxs,
@@ -416,7 +416,7 @@ void C4EnergyBarsUniquifier::RemoveDef(const C4EnergyBarsDef &def)
 	definitions.erase(def);
 }
 
-std::shared_ptr<C4FacetExID> C4EnergyBarsUniquifier::GetFacet(const C4EnergyBarsDef::Gfxs &gfxs, std::string_view gfx)
+std::shared_ptr<C4FacetExID> C4EnergyBarsUniquifier::GetFacet(const std::function<void(StdStrBuf)> &error, const C4EnergyBarsDef::Gfxs &gfxs, std::string_view gfx)
 {
 	std::string key(gfx);
 
@@ -444,7 +444,7 @@ std::shared_ptr<C4FacetExID> C4EnergyBarsUniquifier::GetFacet(const C4EnergyBars
 	}
 	catch (const std::out_of_range &)
 	{
-		LogF("DefineEnergyBars: Missing key \"%s\" in graphics definition", key.c_str());
+		error(FormatString("missing key \"%s\" in graphics definition", key.c_str()));
 		return nullptr;
 	}
 
@@ -455,7 +455,7 @@ std::shared_ptr<C4FacetExID> C4EnergyBarsUniquifier::GetFacet(const C4EnergyBars
 	bool success = Game.GraphicsResource.LoadFile(*facet, file.c_str(), Game.GraphicsResource.Files);
 	if(!success)
 	{
-		LogF("could not load custom energy bar graphic '%s'", file.c_str());
+		error(FormatString("could not load custom energy bar graphic \"%s\"", file.c_str()));
 		return nullptr;
 	}
 
@@ -493,47 +493,39 @@ std::shared_ptr<C4EnergyBars> C4EnergyBarsUniquifier::Instantiate(std::shared_pt
 	return std::make_shared<C4EnergyBars>(definition);
 }
 
-std::shared_ptr<C4EnergyBars> C4EnergyBarsUniquifier::DefineEnergyBars(C4ValueHash *graphics, C4ValueArray *definition)
+std::shared_ptr<C4EnergyBars> C4EnergyBarsUniquifier::DefineEnergyBars(C4AulContext *cthr, C4ValueHash &graphics, const C4ValueArray &definition)
 {
-	if (!graphics)
-	{
-		LogF("DefineEnergyBars Parameter 1 map expected but got: %s", C4Value(graphics).GetDataString().getData());
-		return nullptr;
-	}
-
-	if (!definition)
-	{
-		LogF("DefineEnergyBars Parameter 2 array expected but got: %s", C4Value(definition).GetDataString().getData());
-		return nullptr;
-	}
-
 	int32_t value_index = 0;
 	C4EnergyBarsDef::Gfxs gfx;
 	C4EnergyBarsDef::Bars bars;
 	C4EnergyBarsDef::Names names;
-	bool success = ProcessGraphics(*graphics, gfx) && ProcessGroup(value_index, gfx, *definition, bars, true) && C4EnergyBarsDef::PopulateNamesFromValues(bars, names);
-	if(success)
-	{
-		auto def = UniqueifyDefinition(new C4EnergyBarsDef(gfx, bars, names));
-		return Instantiate(def);
-	}
-	return nullptr;
+
+	ProcessGraphics(cthr, graphics, gfx);
+	ProcessGroup(cthr, value_index, gfx, definition, bars, true);
+	C4EnergyBarsDef::PopulateNamesFromValues([=](StdStrBuf msg){throw C4AulExecError(cthr->Obj, FormatString("DefineEnergyBars: %s", msg.getData()).getData());}, bars, names);
+
+	auto def = UniqueifyDefinition(new C4EnergyBarsDef(gfx, bars, names));
+	return Instantiate(def);
 }
 
-bool C4EnergyBarsUniquifier::ProcessGraphics(C4ValueHash &map, C4EnergyBarsDef::Gfxs &gfx)
+void C4EnergyBarsUniquifier::ProcessGraphics(C4AulContext *cthr, C4ValueHash &map, C4EnergyBarsDef::Gfxs &gfx)
 {
 	const auto keyAmount = C4VString("amount");
 	const auto keyScale  = C4VString("scale");
 	const auto keyFile   = C4VString("file");
 
-	C4ValueHash::Iterator end = map.end();
-	for (C4ValueHash::Iterator it = map.begin(); it != end; ++it)
+	for (auto &[key, val] : map)
 	{
-		C4Value key = (*it).first;
-		auto _key = key.getStr()->Data.getData();
+		auto keyCopy = key;
+		if (!(keyCopy.ConvertTo(C4V_String) && keyCopy._getStr())) {
+			throw C4AulExecError(cthr->Obj, "DefineEnergyBars: keys within maps are expected to be of type string");
+		}
+		auto _key = keyCopy._getStr()->Data.getData();
 
-		C4Value val = (*it).second;
 		auto *_val = val.getMap();
+		if (_val == nullptr) {
+			throw C4AulExecError(cthr->Obj, FormatString("DefineEnergyBars: key \"%s\" is not a map, got: %s", _key, val.GetDataString().getData()).getData());
+		}
 		auto &m = *_val;
 
 		C4Value file = m[keyFile];
@@ -548,15 +540,12 @@ bool C4EnergyBarsUniquifier::ProcessGraphics(C4ValueHash &map, C4EnergyBarsDef::
 		auto it_success = gfx.emplace(_key, C4EnergyBarsDef::Gfx(_key, _file, amount, scale));
 		if (!it_success.second)
 		{
-			LogF("DefineEnergyBars %s duplicate key in gfx description ", _key);
-			return false;
+			throw C4AulExecError(cthr->Obj, FormatString("DefineEnergyBars %s duplicate key in gfx description ", _key).getData());
 		}
 	}
-
-	return true;
 }
 
-bool C4EnergyBarsUniquifier::ProcessGroup(int32_t &value_index, const C4EnergyBarsDef::Gfxs &graphics, const C4ValueArray &group, C4EnergyBarsDef::Bars &bars, bool advanceAlways)
+void C4EnergyBarsUniquifier::ProcessGroup(C4AulContext *cthr, int32_t &value_index, const C4EnergyBarsDef::Gfxs &graphics, const C4ValueArray &group, C4EnergyBarsDef::Bars &bars, bool advanceAlways)
 {
 	int32_t size = group.GetSize();
 	for (int32_t i = 0; i < size; ++i)
@@ -567,12 +556,11 @@ bool C4EnergyBarsUniquifier::ProcessGroup(int32_t &value_index, const C4EnergyBa
 		case C4V_Map:
 			if (const auto *map = element.getMap(); map)
 			{
-				if (!ProcessEnergyBar(value_index, graphics, *map, bars, advanceAlways || i == size-1)) return false;
+				ProcessEnergyBar(cthr, value_index, graphics, *map, bars, advanceAlways || i == size-1);
 			}
 			else
 			{
-				LogF("DefineEnergyBars got unexpected value: %s", element.GetDataString().getData());
-				return false;
+				throw C4AulExecError(cthr->Obj, FormatString("DefineEnergyBars got unexpected value: %s", element.GetDataString().getData()).getData());
 			}
 			break;
 		case C4V_Array:
@@ -580,54 +568,46 @@ bool C4EnergyBarsUniquifier::ProcessGroup(int32_t &value_index, const C4EnergyBa
 			{
 				if (const auto *array = element.getArray(); array)
 				{
-					if(!ProcessGroup(value_index, graphics, *array, bars, false)) return false;
+					ProcessGroup(cthr, value_index, graphics, *array, bars, false);
 				}
 				else
 				{
-					LogF("DefineEnergyBars got unexpected value: %s", element.GetDataString().getData());
-					return false;
+					throw C4AulExecError(cthr->Obj, FormatString("DefineEnergyBars got unexpected value: %s", element.GetDataString().getData()).getData());
 				}
 			}
 			else
 			{
-				LogF("DefineEnergyBars groups in groups are not allowed: %s", element.GetDataString().getData());
-				return false;
+				throw C4AulExecError(cthr->Obj, FormatString("DefineEnergyBars groups in groups are not allowed: %s", element.GetDataString().getData()).getData());
 			}
 			break;
 
 		default:
-			LogF("DefineEnergyBars array or map expected but got: %s", element.GetDataString().getData());
-			return false;
-			break;
+			throw C4AulExecError(cthr->Obj, FormatString("DefineEnergyBars array or map expected but got: %s", element.GetDataString().getData()).getData());
 		}
 	}
-	return true;
 }
 
-bool C4EnergyBarsUniquifier::ProcessEnergyBar(int32_t &value_index, const C4EnergyBarsDef::Gfxs &graphics, const C4ValueHash &bar, C4EnergyBarsDef::Bars &bars, bool advance)
+void C4EnergyBarsUniquifier::ProcessEnergyBar(C4AulContext *cthr, int32_t &value_index, const C4EnergyBarsDef::Gfxs &graphics, const C4ValueHash &bar, C4EnergyBarsDef::Bars &bars, bool advance)
 {
 	C4Value name = bar[C4VString("name")];
 	auto *_name = name.getStr();
 	if (!_name)
 	{
-		LogF("DefineEnergyBars: EnergyBar definition has no name: %s", name.GetDataString().getData());
-		return false;
+		throw C4AulExecError(cthr->Obj, FormatString("DefineEnergyBars: EnergyBar definition has no name: %s", name.GetDataString().getData()).getData());
 	}
 
 	C4Value gfx = bar[C4VString("gfx")];
 	auto *_gfx = gfx.getStr();
 	if (!_gfx)
 	{
-		LogF("DefineEnergyBars: EnergyBar definition has no gfx: %s", gfx.GetDataString().getData());
-		return false;
+		throw C4AulExecError(cthr->Obj, FormatString("DefineEnergyBars: EnergyBar definition has no gfx: %s", gfx.GetDataString().getData()).getData());
 	}
 
 	C4Value physical = bar[C4VString("physical")];
 	auto _physical = static_cast<C4EnergyBarDef::Physical>(physical.getInt());
 	if (_physical & ~C4EnergyBarDef::EBP_All)
 	{
-		LogF("DefineEnergyBars %s definition has invalid physical: %s", name.GetDataString().getData(), physical.GetDataString().getData());
-		return false;
+		throw C4AulExecError(cthr->Obj, FormatString("DefineEnergyBars %s definition has invalid physical: %s", name.GetDataString().getData(), physical.GetDataString().getData()).getData());
 	}
 
 	C4Value hide = bar[C4VString("hide")];
@@ -635,8 +615,7 @@ bool C4EnergyBarsUniquifier::ProcessEnergyBar(int32_t &value_index, const C4Ener
 	if (hide != C4VNull) _hide = static_cast<C4EnergyBarDef::Hide>(hide.getInt());
 	if (_hide & ~C4EnergyBarDef::EBH_All)
 	{
-		LogF("DefineEnergyBars %s definition has invalid hide: %s", name.GetDataString().getData(), hide.GetDataString().getData());
-		return false;
+		throw C4AulExecError(cthr->Obj, FormatString("DefineEnergyBars %s definition has invalid hide: %s", name.GetDataString().getData(), hide.GetDataString().getData()).getData());
 	}
 
 	C4Value index = bar[C4VString("index")];
@@ -645,13 +624,11 @@ bool C4EnergyBarsUniquifier::ProcessEnergyBar(int32_t &value_index, const C4Ener
 	C4ValueInt _value = value.getInt();
 	if (_index < 0)
 	{
-		LogF("DefineEnergyBars %s definition has invalid index: %s", name.GetDataString().getData(), _index);
-		return false;
+		throw C4AulExecError(cthr->Obj, FormatString("DefineEnergyBars %s definition has invalid index: %s", name.GetDataString().getData(), _index).getData());
 	}
 	if (_value < 0)
 	{
-		LogF("DefineEnergyBars %s definition has invalid value: %s", name.GetDataString().getData(), _value);
-		return false;
+		throw C4AulExecError(cthr->Obj, FormatString("DefineEnergyBars %s definition has invalid value: %s", name.GetDataString().getData(), _value).getData());
 	}
 
 	C4ValueInt _max = 1000000;
@@ -662,8 +639,7 @@ bool C4EnergyBarsUniquifier::ProcessEnergyBar(int32_t &value_index, const C4Ener
 	}
 	if (_max < 0)
 	{
-		LogF("DefineEnergyBars %s definition has invalid max: %s", name.GetDataString().getData(), _max);
-		return false;
+		throw C4AulExecError(cthr->Obj, FormatString("DefineEnergyBars %s definition has invalid max: %s", name.GetDataString().getData(), _max).getData());
 	}
 
 	bool _visible = true;
@@ -675,8 +651,7 @@ bool C4EnergyBarsUniquifier::ProcessEnergyBar(int32_t &value_index, const C4Ener
 
 	{
 		const char* file = _gfx->Data.getData();
-		auto facet = GetFacet(graphics, file);
-		if(facet == nullptr) return false;
+		auto facet = GetFacet([&](StdStrBuf msg){throw C4AulExecError(cthr->Obj, FormatString("DefineEnergyBars %s %s", name.GetDataString().getData(), msg.getData()).getData());}, graphics, file);
 
 		C4EnergyBarDef bar(_name->Data.getData(), file, facet, _index, _physical);
 		if(physical != C4VNull)
@@ -697,8 +672,6 @@ bool C4EnergyBarsUniquifier::ProcessEnergyBar(int32_t &value_index, const C4Ener
 		bar.scale = static_cast<float>(scale) / 100.0f;
 		bars.push_back(bar);
 	}
-
-	return true;
 }
 
 
@@ -739,7 +712,11 @@ void C4EnergyBarsAdapt::CompileFunc(StdCompiler *comp) {
 		// get facets and restore scale from gfxs
 		for (auto &bar: def->bars)
 		{
-			bar.facet = Game.EnergyBars.GetFacet(def->gfxs, bar.gfx.c_str());
+			bar.facet = Game.EnergyBars.GetFacet([&](StdStrBuf msg){comp->Warn("Error loading EnergyBars %s", msg.getData());}, def->gfxs, bar.gfx.c_str());
+			if (bar.facet == nullptr) {
+				bars = Game.EnergyBars.DefaultBars();
+				return;
+			}
 			auto scale = def->gfxs.at(bar.gfx).scale;
 			bar.scale = static_cast<float>(scale) / 100.0f;
 		}

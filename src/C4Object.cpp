@@ -2682,7 +2682,7 @@ void C4Object::DrawLine(C4FacetEx &cgo)
 	FinishedDrawing();
 }
 
-bool C4Object::DefineEnergyBars(C4ValueHash *graphics, C4ValueArray *definition)
+bool C4Object::DefineEnergyBars(C4AulContext *cthr, C4ValueHash *graphics, C4ValueArray *definition)
 {
 	// If null pointer is given restore default energy bars
 	if (!graphics || !definition)
@@ -2691,7 +2691,7 @@ bool C4Object::DefineEnergyBars(C4ValueHash *graphics, C4ValueArray *definition)
 		return true;
 	}
 
-	auto bars = Game.EnergyBars.DefineEnergyBars(graphics, definition);
+	auto bars = Game.EnergyBars.DefineEnergyBars(cthr, *graphics, *definition);
 	if (bars != nullptr)
 	{
 		energyBars = bars;
@@ -2700,14 +2700,14 @@ bool C4Object::DefineEnergyBars(C4ValueHash *graphics, C4ValueArray *definition)
 	return false;
 }
 
-void C4Object::SetEnergyBar(const char* name, int32_t value, int32_t max)
+void C4Object::SetEnergyBar(C4AulContext *cthr, const char* name, int32_t value, int32_t max)
 {
-	energyBars->SetEnergyBar(name, value, max);
+	energyBars->SetEnergyBar(cthr, name, value, max);
 }
 
-void C4Object::SetEnergyBarVisible(const char* name, bool visible)
+void C4Object::SetEnergyBarVisible(C4AulContext *cthr, const char* name, bool visible)
 {
-	energyBars->SetEnergyBarVisible(name, visible);
+	energyBars->SetEnergyBarVisible(cthr, name, visible);
 }
 
 void C4Object::DrawEnergyBars(C4Facet &cgo)
