@@ -63,42 +63,41 @@ private:
 	C4EnergyBar* BarVal(const std::string &name);
 };
 
-
 class C4EnergyBarDef
 {
 public:
-	enum Physical : int32_t {
+	enum Physical {
 		EBP_None   = 0,
 		EBP_Energy = 1,
 		EBP_Magic  = 2,
 		EBP_Breath = 3,
 		EBP_All = EBP_Energy | EBP_Magic | EBP_Breath
 	};
-	enum Hide : int32_t {
+	enum Hide {
 		EBH_Never = 0,
-		EBH_Empty = 1,
-		EBH_Full = 2,
+		EBH_HideHUDBars = 1,
+		EBH_Empty = 2,
+		EBH_Full = 4,
 		EBH_EmptyFull = EBH_Empty | EBH_Full,
-		EBH_HideHUDBars = 512,
 		EBH_All = EBH_EmptyFull | EBH_HideHUDBars
 	};
 
 public:
   C4EnergyBarDef();
-	C4EnergyBarDef(std::string_view _name, std::string_view _file, const std::shared_ptr<C4FacetExID> &_gfx, int32_t _index, int32_t _physical = 0);
+	C4EnergyBarDef(std::string_view _name, std::string_view _file, const std::shared_ptr<C4FacetExID> &_gfx, int32_t _index, Physical _physical = EBP_None);
 
 	bool operator==(const C4EnergyBarDef &rhs) const;
 
-	static int32_t DefaultHide(int32_t physical);
-	static int32_t DefaultIndex(int32_t physical);
+	static Hide DefaultHide(Physical physical);
+	static int32_t DefaultIndex(Physical physical);
 
 	std::size_t GetHash() const;
 	void CompileFunc(StdCompiler *comp);
 
 public:
 	std::string name;
-	int32_t physical;
-	int32_t hide;
+	Physical physical;
+	Hide hide;
 
 	std::string gfx;
 	std::shared_ptr<C4FacetExID> facet; // calculated from gfx
@@ -111,6 +110,8 @@ public:
 	bool visible;
 	float scale; // calculated from gfx.scale
 };
+
+inline C4EnergyBarDef::Hide operator|(C4EnergyBarDef::Hide a, C4EnergyBarDef::Hide b);
 
 
 class C4EnergyBarsDef

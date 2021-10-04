@@ -100,7 +100,7 @@ void C4EnergyBar::CompileFunc(StdCompiler *comp)
 
 C4EnergyBars::C4EnergyBars(std::shared_ptr<C4EnergyBarsDef> _def):def(_def) {
 	for (const auto &bardef: def->bars)
-		if (bardef.physical == 0)
+		if (bardef.physical == C4EnergyBarDef::EBP_None)
 			values.emplace_back(bardef.value, bardef.max, bardef.visible);
 }
 
@@ -205,12 +205,12 @@ void C4EnergyBars::DrawEnergyBars(C4Facet &cgo, C4Object &obj)
 
 
 C4EnergyBarDef::C4EnergyBarDef():
-	name(), physical(0), hide(0),
+	name(), physical(EBP_None), hide(EBH_Empty),
 	gfx(), facet(), index(), advance(true),
 	value_index(-1), value(0), max(1000000), visible(true), scale(1.0f)
 {}
 
-C4EnergyBarDef::C4EnergyBarDef(std::string_view _name, std::string_view _gfx, const std::shared_ptr<C4FacetExID> &_facet, int32_t _index, int32_t _physical):
+C4EnergyBarDef::C4EnergyBarDef(std::string_view _name, std::string_view _gfx, const std::shared_ptr<C4FacetExID> &_facet, int32_t _index, Physical _physical):
 	name(_name), physical(_physical), hide(DefaultHide(physical)),
 	gfx(_gfx), facet(_facet), index(_index), advance(true),
 	value_index(-1), value(0), max(1000000), visible(true), scale(1.0f)
@@ -231,7 +231,7 @@ bool C4EnergyBarDef::operator==(const C4EnergyBarDef &rhs) const
 		visible == rhs.visible;
 }
 
-int32_t C4EnergyBarDef::DefaultHide(int32_t physical) {
+C4EnergyBarDef::Hide C4EnergyBarDef::DefaultHide(C4EnergyBarDef::Physical physical) {
 	switch (physical)
 	{
 	case EBP_Energy: return EBH_Never | EBH_HideHUDBars;
@@ -242,7 +242,7 @@ int32_t C4EnergyBarDef::DefaultHide(int32_t physical) {
 	}
 }
 
-int32_t C4EnergyBarDef::DefaultIndex(int32_t physical) {
+int32_t C4EnergyBarDef::DefaultIndex(C4EnergyBarDef::Physical physical) {
 	switch (physical)
 	{
 	case EBP_Energy: return 0;
@@ -271,8 +271,26 @@ std::size_t C4EnergyBarDef::GetHash() const
 void C4EnergyBarDef::CompileFunc(StdCompiler *comp)
 {
 	comp->Value(mkNamingAdapt(name, "Name"));
-	comp->Value(mkNamingAdapt(physical, "Physical", 0));
-	comp->Value(mkNamingAdapt(hide, "Hide", 1));
+	StdEnumEntry<Physical> PhysicalEntries[] =
+	{
+		{ "",       EBP_None },
+		{ "Energy", EBP_Energy },
+		{ "Magic",  EBP_Magic },
+		{ "Breath", EBP_Breath },
+	};
+	comp->Value(mkNamingAdapt(mkEnumAdaptT<uint8_t>(physical, PhysicalEntries), "Physical", EBP_None));
+	StdEnumEntry<Hide> HideEntries[] =
+	{
+		{ "Never",             EBH_Never },
+		{ "Never_HideHud",     EBH_Never | EBH_HideHUDBars },
+		{ "Empty",             EBH_Empty },
+		{ "Empty_HideHud",     EBH_Empty | EBH_HideHUDBars },
+		{ "Full",              EBH_Full },
+		{ "Full_HideHud",      EBH_Full | EBH_HideHUDBars },
+		{ "EmptyFull",         EBH_EmptyFull },
+		{ "EmptyFull_HideHud", EBH_EmptyFull | EBH_HideHUDBars },
+	};
+	comp->Value(mkNamingAdapt(mkEnumAdaptT<uint8_t>(hide, HideEntries), "Hide", EBH_Empty));
 	comp->Value(mkNamingAdapt(gfx, "Gfx"));
 	comp->Value(mkNamingAdapt(index, "Index"));
 	comp->Value(mkNamingAdapt(advance, "Advance", true));
@@ -281,6 +299,11 @@ void C4EnergyBarDef::CompileFunc(StdCompiler *comp)
 	comp->Value(mkNamingAdapt(max, "Max", 1000000));
 	comp->Value(mkNamingAdapt(visible, "Visible", true));
 	// gfx and scale are restored from def.gfxs
+}
+
+inline C4EnergyBarDef::Hide operator|(C4EnergyBarDef::Hide a, C4EnergyBarDef::Hide b)
+{
+	return static_cast<C4EnergyBarDef::Hide>(static_cast<int32_t>(a) | static_cast<int32_t>(b));
 }
 
 
@@ -600,7 +623,7 @@ bool C4EnergyBarsUniquifier::ProcessEnergyBar(int32_t &value_index, const C4Ener
 	}
 
 	C4Value physical = bar[C4VString("physical")];
-	C4ValueInt _physical = physical.getInt();
+	auto _physical = static_cast<C4EnergyBarDef::Physical>(physical.getInt());
 	if (_physical & ~C4EnergyBarDef::EBP_All)
 	{
 		LogF("DefineEnergyBars %s definition has invalid physical: %s", name.GetDataString().getData(), physical.GetDataString().getData());
@@ -608,8 +631,8 @@ bool C4EnergyBarsUniquifier::ProcessEnergyBar(int32_t &value_index, const C4Ener
 	}
 
 	C4Value hide = bar[C4VString("hide")];
-	C4ValueInt _hide = C4EnergyBarDef::EBH_Empty;
-	if (hide != C4VNull) _hide = hide.getInt();
+	auto _hide = C4EnergyBarDef::EBH_Empty;
+	if (hide != C4VNull) _hide = static_cast<C4EnergyBarDef::Hide>(hide.getInt());
 	if (_hide & ~C4EnergyBarDef::EBH_All)
 	{
 		LogF("DefineEnergyBars %s definition has invalid hide: %s", name.GetDataString().getData(), hide.GetDataString().getData());

@@ -24,6 +24,7 @@
 #include <C4Version.h>
 
 #include <C4Application.h>
+#include <C4EnergyBars.h>
 #include <C4Object.h>
 #include <C4ObjectInfo.h>
 #include <C4ObjectCom.h>
@@ -1725,15 +1726,6 @@ static bool FnSetMenuTextProgress(C4AulContext *cthr, C4ValueInt iNewProgress, C
 }
 
 // Custom Energy Bars
-
-const int EBP_None        = 0,
-          EBP_Energy      = 1,
-          EBP_Magic       = 2,
-          EBP_Breath      = 3,
-          EBH_Never       = 0,
-          EBH_Empty       = 1,
-          EBH_Full        = 2,
-          EBH_HideHUDBars = 512;
 
 static bool FnDefineEnergyBars(C4AulContext *cthr, C4ValueHash *pMap, C4ValueArray *pArray, C4Object *pObj)
 {
@@ -6325,14 +6317,14 @@ static constexpr C4ScriptConstDef C4ScriptConstMap[] =
 	{ "C4MN_Add_ForceCount",  C4V_Int, C4MN_Add_ForceCount },
 	{ "C4MN_Add_ForceNoDesc", C4V_Int, C4MN_Add_ForceNoDesc },
 
-	{ "EBP_None",        C4V_Int, EBP_None },        // EnergyBar Physical none
-	{ "EBP_Energy",      C4V_Int, EBP_Energy },      // EnergyBar Physical energy
-	{ "EBP_Magic",       C4V_Int, EBP_Magic },       // EnergyBar Physical magic
-	{ "EBP_Breath",      C4V_Int, EBP_Breath },      // EnergyBar Physical breath
-	{ "EBH_Never",       C4V_Int, EBH_Never },       // EnergyBar Hide never
-	{ "EBH_Empty",       C4V_Int, EBH_Empty },       // EnergyBar Hide empty
-	{ "EBH_Full",        C4V_Int, EBH_Full },        // EnergyBar Hide full
-	{ "EBH_HideHUDBars", C4V_Int, EBH_HideHUDBars }, // EnergyBar HideHUDBars if not given ignores C4Def::HB_Energy etc.
+	{ "EBP_None",        C4V_Int, C4EnergyBarDef::EBP_None },        // EnergyBar Physical none
+	{ "EBP_Energy",      C4V_Int, C4EnergyBarDef::EBP_Energy },      // EnergyBar Physical energy
+	{ "EBP_Magic",       C4V_Int, C4EnergyBarDef::EBP_Magic },       // EnergyBar Physical magic
+	{ "EBP_Breath",      C4V_Int, C4EnergyBarDef::EBP_Breath },      // EnergyBar Physical breath
+	{ "EBH_Never",       C4V_Int, C4EnergyBarDef::EBH_Never },       // EnergyBar Hide never
+	{ "EBH_Empty",       C4V_Int, C4EnergyBarDef::EBH_Empty },       // EnergyBar Hide empty
+	{ "EBH_Full",        C4V_Int, C4EnergyBarDef::EBH_Full },        // EnergyBar Hide full
+	{ "EBH_HideHUDBars", C4V_Int, C4EnergyBarDef::EBH_HideHUDBars }, // EnergyBar HideHUDBars if not given ignores C4Def::HB_Energy etc.
 
 	{ "FX_OK",                  C4V_Int, C4Fx_OK }, // generic standard behaviour for all effect callbacks
 	{ "FX_Effect_Deny",         C4V_Int, C4Fx_Effect_Deny }, // delete effect
