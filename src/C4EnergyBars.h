@@ -137,7 +137,6 @@ public:
 	C4EnergyBarsDef(const Gfxs &_gfxs, const Bars &_bars, const Names &_names);
 
 	C4EnergyBarsDef(const C4EnergyBarsDef &other) = default;
-	C4EnergyBarsDef(C4EnergyBarsDef& other) = default;
 	C4EnergyBarsDef(C4EnergyBarsDef&& other) = default;
 	C4EnergyBarsDef& operator=(const C4EnergyBarsDef& other) = default;
 	C4EnergyBarsDef& operator=(C4EnergyBarsDef&& other) = default;
