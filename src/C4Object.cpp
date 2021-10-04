@@ -17,7 +17,7 @@
 /* That which fills the world with life */
 
 #include <C4Include.h>
-#include <C4EnergyBars.h>
+#include <C4HudBars.h>
 #include <C4Object.h>
 #include <C4Version.h>
 
@@ -148,7 +148,7 @@ void C4Object::Default()
 	FirstRef = nullptr;
 	pGfxOverlay = nullptr;
 	iLastAttachMovementFrame = -1;
-	energyBars = Game.EnergyBars.DefaultBars();
+	hudBars = Game.HudBars.DefaultBars();
 }
 
 bool C4Object::Init(C4Def *pDef, C4Object *pCreator,
@@ -2682,37 +2682,37 @@ void C4Object::DrawLine(C4FacetEx &cgo)
 	FinishedDrawing();
 }
 
-bool C4Object::DefineEnergyBars(C4AulContext *cthr, C4ValueHash *graphics, C4ValueArray *definition)
+bool C4Object::DefineHudBars(C4AulContext *cthr, C4ValueHash *graphics, C4ValueArray *definition)
 {
-	// If null pointer is given restore default energy bars
+	// If null pointer is given restore default hud bars
 	if (!graphics || !definition)
 	{
-		energyBars = Game.EnergyBars.DefaultBars();
+		hudBars = Game.HudBars.DefaultBars();
 		return true;
 	}
 
-	auto bars = Game.EnergyBars.DefineEnergyBars(cthr, *graphics, *definition);
+	auto bars = Game.HudBars.DefineHudBars(cthr, *graphics, *definition);
 	if (bars != nullptr)
 	{
-		energyBars = bars;
+		hudBars = bars;
 		return true;
 	}
 	return false;
 }
 
-void C4Object::SetEnergyBar(C4AulContext *cthr, const char* name, int32_t value, int32_t max)
+void C4Object::SetHudBar(C4AulContext *cthr, const char* name, int32_t value, int32_t max)
 {
-	energyBars->SetEnergyBar(cthr, name, value, max);
+	hudBars->SetHudBar(cthr, name, value, max);
 }
 
-void C4Object::SetEnergyBarVisible(C4AulContext *cthr, const char* name, bool visible)
+void C4Object::SetHudBarVisible(C4AulContext *cthr, const char* name, bool visible)
 {
-	energyBars->SetEnergyBarVisible(cthr, name, visible);
+	hudBars->SetHudBarVisible(cthr, name, visible);
 }
 
-void C4Object::DrawEnergyBars(C4Facet &cgo)
+void C4Object::DrawHudBars(C4Facet &cgo)
 {
-	energyBars->DrawEnergyBars(cgo, *this);
+	hudBars->DrawHudBars(cgo, *this);
 }
 
 void C4Object::CompileFunc(StdCompiler *pComp)
@@ -2806,7 +2806,7 @@ void C4Object::CompileFunc(StdCompiler *pComp)
 	pComp->Value(mkNamingPtrAdapt(pDrawTransform,                       "DrawTransform"));
 	pComp->Value(mkNamingPtrAdapt(pEffects,                             "Effects"));
 	pComp->Value(mkNamingAdapt(C4GraphicsOverlayListAdapt(pGfxOverlay), "GfxOverlay",         nullptr));
-	pComp->Value(mkNamingAdapt(C4EnergyBarsAdapt(energyBars), "EnergyBars", Game.EnergyBars.DefaultBars()));
+	pComp->Value(mkNamingAdapt(C4HudBarsAdapt(hudBars), "HudBars", Game.HudBars.DefaultBars()));
 
 
 	if (PhysicalTemporary)

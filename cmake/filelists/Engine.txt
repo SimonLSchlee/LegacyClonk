@@ -40,8 +40,6 @@ src/C4EditCursor.cpp
 src/C4EditCursor.h
 src/C4Effect.cpp
 src/C4Effects.h
-src/C4EnergyBars.cpp
-src/C4EnergyBars.h
 src/C4EnumeratedObjectPtr.h
 src/C4EnumeratedObjectPtr.cpp
 src/C4Extra.cpp
@@ -109,6 +107,8 @@ src/C4GuiLabels.cpp
 src/C4GuiListBox.cpp
 src/C4GuiMenu.cpp
 src/C4GuiTabular.cpp
+src/C4HudBars.cpp
+src/C4HudBars.h
 src/C4IDList.cpp
 src/C4IDList.h
 src/C4Id.cpp

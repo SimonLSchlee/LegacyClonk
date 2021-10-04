@@ -24,7 +24,7 @@
 #include <C4Version.h>
 
 #include <C4Application.h>
-#include <C4EnergyBars.h>
+#include <C4HudBars.h>
 #include <C4Object.h>
 #include <C4ObjectInfo.h>
 #include <C4ObjectCom.h>
@@ -1727,22 +1727,22 @@ static bool FnSetMenuTextProgress(C4AulContext *cthr, C4ValueInt iNewProgress, C
 
 // Custom Energy Bars
 
-static bool FnDefineEnergyBars(C4AulContext *cthr, C4ValueHash *pMap, C4ValueArray *pArray, C4Object *pObj)
+static bool FnDefineHudBars(C4AulContext *cthr, C4ValueHash *pMap, C4ValueArray *pArray, C4Object *pObj)
 {
 	if (!pObj) pObj = cthr->Obj; if (!pObj) return false;
-	return pObj->DefineEnergyBars(cthr, pMap, pArray);
+	return pObj->DefineHudBars(cthr, pMap, pArray);
 }
 
-static void FnSetEnergyBar(C4AulContext *cthr, C4String *szName, C4ValueInt iNewValue, C4Object *pObj, C4ValueInt iNewMax)
+static void FnSetHudBar(C4AulContext *cthr, C4String *szName, C4ValueInt iNewValue, C4Object *pObj, C4ValueInt iNewMax)
 {
 	if (!pObj) pObj = cthr->Obj; if (!pObj) return;
-	return pObj->SetEnergyBar(cthr, FnStringPar(szName), iNewValue, iNewMax);
+	return pObj->SetHudBar(cthr, FnStringPar(szName), iNewValue, iNewMax);
 }
 
-static void FnSetEnergyBarVisible(C4AulContext *cthr, C4String *szName, bool fVisible, C4Object *pObj)
+static void FnSetHudBarVisible(C4AulContext *cthr, C4String *szName, bool fVisible, C4Object *pObj)
 {
 	if (!pObj) pObj = cthr->Obj; if (!pObj) return;
-	return pObj->SetEnergyBarVisible(cthr, FnStringPar(szName), fVisible);
+	return pObj->SetHudBarVisible(cthr, FnStringPar(szName), fVisible);
 }
 
 // Check / Status
@@ -6317,14 +6317,14 @@ static constexpr C4ScriptConstDef C4ScriptConstMap[] =
 	{ "C4MN_Add_ForceCount",  C4V_Int, C4MN_Add_ForceCount },
 	{ "C4MN_Add_ForceNoDesc", C4V_Int, C4MN_Add_ForceNoDesc },
 
-	{ "EBP_None",        C4V_Int, C4EnergyBarDef::EBP_None },        // EnergyBar Physical none
-	{ "EBP_Energy",      C4V_Int, C4EnergyBarDef::EBP_Energy },      // EnergyBar Physical energy
-	{ "EBP_Magic",       C4V_Int, C4EnergyBarDef::EBP_Magic },       // EnergyBar Physical magic
-	{ "EBP_Breath",      C4V_Int, C4EnergyBarDef::EBP_Breath },      // EnergyBar Physical breath
-	{ "EBH_Never",       C4V_Int, C4EnergyBarDef::EBH_Never },       // EnergyBar Hide never
-	{ "EBH_Empty",       C4V_Int, C4EnergyBarDef::EBH_Empty },       // EnergyBar Hide empty
-	{ "EBH_Full",        C4V_Int, C4EnergyBarDef::EBH_Full },        // EnergyBar Hide full
-	{ "EBH_HideHUDBars", C4V_Int, C4EnergyBarDef::EBH_HideHUDBars }, // EnergyBar HideHUDBars if not given ignores C4Def::HB_Energy etc.
+	{ "EBP_None",        C4V_Int, C4HudBarDef::EBP_None },        // HudBar Physical none
+	{ "EBP_Energy",      C4V_Int, C4HudBarDef::EBP_Energy },      // HudBar Physical energy
+	{ "EBP_Magic",       C4V_Int, C4HudBarDef::EBP_Magic },       // HudBar Physical magic
+	{ "EBP_Breath",      C4V_Int, C4HudBarDef::EBP_Breath },      // HudBar Physical breath
+	{ "EBH_Never",       C4V_Int, C4HudBarDef::EBH_Never },       // HudBar Hide never
+	{ "EBH_Empty",       C4V_Int, C4HudBarDef::EBH_Empty },       // HudBar Hide empty
+	{ "EBH_Full",        C4V_Int, C4HudBarDef::EBH_Full },        // HudBar Hide full
+	{ "EBH_HideHUDBars", C4V_Int, C4HudBarDef::EBH_HideHUDBars }, // HudBar HideHUDBars if not given ignores C4Def::HB_Energy etc.
 
 	{ "FX_OK",                  C4V_Int, C4Fx_OK }, // generic standard behaviour for all effect callbacks
 	{ "FX_Effect_Deny",         C4V_Int, C4Fx_Effect_Deny }, // delete effect
@@ -6843,9 +6843,9 @@ void InitFunctionMap(C4AulScriptEngine *pEngine)
 	AddFunc(pEngine, "SelectMenuItem",                  FnSelectMenuItem);
 	AddFunc(pEngine, "SetMenuDecoration",               FnSetMenuDecoration);
 	AddFunc(pEngine, "SetMenuTextProgress",             FnSetMenuTextProgress);
-	AddFunc(pEngine, "DefineEnergyBars",                FnDefineEnergyBars);
-	AddFunc(pEngine, "SetEnergyBar",                    FnSetEnergyBar);
-	AddFunc(pEngine, "SetEnergyBarVisible",             FnSetEnergyBarVisible);
+	AddFunc(pEngine, "DefineHudBars",                   FnDefineHudBars);
+	AddFunc(pEngine, "SetHudBar",                       FnSetHudBar);
+	AddFunc(pEngine, "SetHudBarVisible",                FnSetHudBarVisible);
 	AddFunc(pEngine, "SetSeason",                       FnSetSeason);
 	AddFunc(pEngine, "GetSeason",                       FnGetSeason);
 	AddFunc(pEngine, "SetClimate",                      FnSetClimate);

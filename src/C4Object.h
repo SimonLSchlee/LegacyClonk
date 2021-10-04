@@ -20,7 +20,7 @@
 
 #include "C4Command.h"
 #include "C4Effects.h"
-#include "C4EnergyBars.h"
+#include "C4HudBars.h"
 #include "C4EnumeratedObjectPtr.h"
 #include "C4Facet.h"
 #include "C4Id.h"
@@ -199,7 +199,7 @@ public:
 
 	class C4GraphicsOverlay *pGfxOverlay; // singly linked list of overlay graphics
 
-	std::shared_ptr<C4EnergyBars> energyBars;
+	std::shared_ptr<C4HudBars> hudBars;
 
 protected:
 	std::string CustomName;
@@ -258,10 +258,10 @@ public:
 		FIXED nxdir, FIXED nydir, FIXED nrdir, int32_t iController);
 	void CompileFunc(StdCompiler *pComp);
 
-	bool DefineEnergyBars(C4AulContext *cthr, C4ValueHash *graphics, C4ValueArray *definition);
-	void SetEnergyBar(C4AulContext *cthr, const char* name, int32_t value, int32_t max = 0);
-	void SetEnergyBarVisible(C4AulContext *cthr, const char* name, bool fVisible);
-	void DrawEnergyBars(C4Facet &cgo);
+	bool DefineHudBars(C4AulContext *cthr, C4ValueHash *graphics, C4ValueArray *definition);
+	void SetHudBar(C4AulContext *cthr, const char* name, int32_t value, int32_t max = 0);
+	void SetHudBarVisible(C4AulContext *cthr, const char* name, bool fVisible);
+	void DrawHudBars(C4Facet &cgo);
 
 	void DrawLine(C4FacetEx &cgo);
 	void DrawCommands(C4Facet &cgo, C4Facet &cgo2, C4RegionList *pRegions);
