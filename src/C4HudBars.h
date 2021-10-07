@@ -26,6 +26,7 @@ class C4HudBars;
 
 #include <unordered_map>
 #include <vector>
+#include <map>
 #include <memory>
 #include <string>
 
@@ -60,7 +61,7 @@ public:
 	void SetHudBarVisible(C4AulContext *cthr, const std::string &name, bool visible);
 
 private:
-	C4HudBar* BarVal(C4AulContext *cthr, const char *functionName, const std::string &name);
+	C4HudBar *BarVal(C4AulContext *cthr, const char *functionName, const std::string &name);
 };
 
 class C4HudBarDef
@@ -137,9 +138,9 @@ public:
 	C4HudBarsDef(const Gfxs &_gfxs, const Bars &_bars, const Names &_names);
 
 	C4HudBarsDef(const C4HudBarsDef &other) = default;
-	C4HudBarsDef(C4HudBarsDef&& other) = default;
-	C4HudBarsDef& operator=(const C4HudBarsDef& other) = default;
-	C4HudBarsDef& operator=(C4HudBarsDef&& other) = default;
+	C4HudBarsDef(C4HudBarsDef &&other) = default;
+	C4HudBarsDef &operator=(const C4HudBarsDef &other) = default;
+	C4HudBarsDef &operator=(C4HudBarsDef &&other) = default;
 
 	static void PopulateNamesFromValues(const std::function<void(StdStrBuf)> &error, const Bars &bars, Names &names);
 
