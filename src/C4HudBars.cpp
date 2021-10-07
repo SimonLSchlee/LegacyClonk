@@ -20,6 +20,8 @@
 #include <C4ValueList.h>
 #include <C4ValueHash.h>
 
+#include "StdHelpers.h"
+
 #include <C4Game.h>
 #ifdef C4ENGINE
 #include <C4Def.h>
@@ -31,52 +33,6 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
-
-class C4Object;
-
-// TODO find a place so that this can be shared between c4value.cpp and this file
-namespace
-{
-	// based on boost container_hash's hashCombine
-	constexpr void hashCombine(std::size_t &hash, std::size_t nextHash)
-	{
-		if constexpr (sizeof(std::size_t) == 4)
-									 {
-#define rotateLeft32(x, r) (x << r) | (x >> (32 - r))
-										 constexpr std::size_t c1 = 0xcc9e2d51;
-										 constexpr std::size_t c2 = 0x1b873593;
-
-										 nextHash *= c1;
-										 nextHash = rotateLeft32(nextHash, 15);
-										 nextHash *= c2;
-
-										 hash ^= nextHash;
-										 hash = rotateLeft32(hash, 13);
-										 hash = hash * 5 + 0xe6546b64;
-#undef rotateLeft32
-									 }
-		else if constexpr (sizeof(std::size_t) == 8)
-												{
-													constexpr std::size_t m = 0xc6a4a7935bd1e995;
-													constexpr int r = 47;
-
-													nextHash *= m;
-													nextHash ^= nextHash >> r;
-													nextHash *= m;
-
-													hash ^= nextHash;
-													hash *= m;
-
-													// Completely arbitrary number, to prevent 0's
-													// from hashing to 0.
-													hash += 0xe6546b64;
-												}
-		else
-			{
-				hash ^= nextHash + 0x9e3779b9 + (hash << 6) + (hash >> 2);
-			}
-	}
-}
 
 
 C4HudBar::C4HudBar(): value(0), max(1000000), visible(true) {}
@@ -260,15 +216,15 @@ int32_t C4HudBarDef::DefaultIndex(C4HudBarDef::Physical physical) {
 std::size_t C4HudBarDef::GetHash() const
 {
 	std::size_t result = std::hash<std::string>{}(name);
-	hashCombine(result, std::hash<int32_t>{}(physical));
-	hashCombine(result, std::hash<int32_t>{}(hide));
-	hashCombine(result, std::hash<std::string>{}(gfx));
-	hashCombine(result, std::hash<int32_t>{}(index));
-	hashCombine(result, std::hash<bool>{}(advance));
-	hashCombine(result, std::hash<int32_t>{}(value_index));
-	hashCombine(result, std::hash<int32_t>{}(value));
-	hashCombine(result, std::hash<int32_t>{}(max));
-	hashCombine(result, std::hash<bool>{}(visible));
+	HashCombine(result, std::hash<int32_t>{}(physical));
+	HashCombine(result, std::hash<int32_t>{}(hide));
+	HashCombine(result, std::hash<std::string>{}(gfx));
+	HashCombine(result, std::hash<int32_t>{}(index));
+	HashCombine(result, std::hash<bool>{}(advance));
+	HashCombine(result, std::hash<int32_t>{}(value_index));
+	HashCombine(result, std::hash<int32_t>{}(value));
+	HashCombine(result, std::hash<int32_t>{}(max));
+	HashCombine(result, std::hash<bool>{}(visible));
 	return result;
 }
 
@@ -372,14 +328,14 @@ std::size_t C4HudBarsDef::GetHash() const
 	std::size_t result = 0;
 	for (auto &gfx: gfxs)
 	{
-		hashCombine(result, std::hash<std::string>{}(gfx.second.key));
-		hashCombine(result, std::hash<std::string>{}(gfx.second.file));
-		hashCombine(result, std::hash<uint32_t>{}(gfx.second.amount));
-		hashCombine(result, std::hash<uint32_t>{}(gfx.second.scale));
+		HashCombine(result, std::hash<std::string>{}(gfx.second.key));
+		HashCombine(result, std::hash<std::string>{}(gfx.second.file));
+		HashCombine(result, std::hash<uint32_t>{}(gfx.second.amount));
+		HashCombine(result, std::hash<uint32_t>{}(gfx.second.scale));
 	}
 
 	for (auto &bardef: bars)
-		hashCombine(result, bardef.GetHash());
+		HashCombine(result, bardef.GetHash());
 
 	return result;
 }
