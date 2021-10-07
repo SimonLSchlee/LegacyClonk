@@ -519,14 +519,14 @@ void C4HudBarsUniquifier::ProcessGraphics(C4AulContext *cthr, C4ValueHash &map, 
 		if (key.GetType() != C4V_String) {
 			throw C4AulExecError(cthr->Obj, "DefineHudBars: keys within maps are expected to be of type string");
 		}
-		const auto keyStr = key._getStr();
+		const auto keyStr = key.GetRefVal()._getStr();
 		const auto _key = keyStr->Data.getData();
 
 		if (val.GetType() != C4V_Map)
 		{
 			throw C4AulExecError(cthr->Obj, FormatString("DefineHudBars: key \"%s\" is not a map, got: %s", _key, val.GetDataString().getData()).getData());
 		}
-		const auto _val = val._getMap();
+		const auto _val = val.GetRefVal()._getMap();
 		const auto &m = *_val;
 
 		C4Value file = m[keyFile];
