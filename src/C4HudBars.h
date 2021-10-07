@@ -172,7 +172,7 @@ public:
 	void RemoveDef(const C4HudBarsDef &def);
 
 	std::shared_ptr<C4FacetExID>  GetFacet(const std::function<void(StdStrBuf)> &error, const C4HudBarsDef::Gfxs &gfx, std::string_view file);
-	std::shared_ptr<C4HudBarsDef> UniqueifyDefinition(C4HudBarsDef *definition);
+	std::shared_ptr<C4HudBarsDef> UniqueifyDefinition(std::unique_ptr<C4HudBarsDef> definition);
 	std::shared_ptr<C4HudBars>    Instantiate(std::shared_ptr<C4HudBarsDef> definition);
 	std::shared_ptr<C4HudBars>    DefineHudBars(C4AulContext *cthr, C4ValueHash &graphics, const C4ValueArray &definition);
 

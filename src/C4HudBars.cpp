@@ -354,13 +354,13 @@ std::shared_ptr<C4HudBars> C4HudBarsUniquifier::DefaultBars()
 		auto gfxs = C4HudBarsDef::Gfxs{{file, C4HudBarsDef::Gfx(file, file, 3, 100)}};
 		auto gfx = GetFacet([=](StdStrBuf msg){LogFatal(FormatString("could not load DefaultBars \"%s\"", file).getData());}, gfxs, file);
 		auto def = UniqueifyDefinition(
-		  new C4HudBarsDef(
+			std::move(std::make_unique<C4HudBarsDef>(
 		    gfxs,
 		    C4HudBarsDef::Bars{
 		      C4HudBarDef("Energy", file, gfx, 0, C4HudBarDef::EBP_Energy),
 		      C4HudBarDef("Magic",  file, gfx, 1, C4HudBarDef::EBP_Magic),
 		      C4HudBarDef("Breath", file, gfx, 2, C4HudBarDef::EBP_Breath)
-		}));
+		})));
 		defaultBars = Instantiate(def);
 	}
 
@@ -425,15 +425,14 @@ std::shared_ptr<C4FacetExID> C4HudBarsUniquifier::GetFacet(const std::function<v
 	return facet;
 }
 
-std::shared_ptr<C4HudBarsDef> C4HudBarsUniquifier::UniqueifyDefinition(C4HudBarsDef *definition)
+std::shared_ptr<C4HudBarsDef> C4HudBarsUniquifier::UniqueifyDefinition(std::unique_ptr<C4HudBarsDef> definition)
 {
-	// TODO somehow change *definition to unique_ptr?
-	// currently definition always gets owned by a shared_ptr, that either ends up being the canonical shared_ptr
-	// or goes out of scope deleting the definition
-
+	// definition always gets owned by a shared_ptr,
+	// that either ends up being the canonical shared_ptr,
+	// or goes out of scope deleting the definition.
 	// the weak ptr remembers the custom deleter
-	auto shared = std::shared_ptr<C4HudBarsDef>(definition, [=](C4HudBarsDef *def){definitions.erase(*def);});
-	auto it_success = definitions.emplace(*definition, std::weak_ptr<C4HudBarsDef>(shared));
+	auto shared = std::shared_ptr<C4HudBarsDef>(definition.release(), [=](C4HudBarsDef *def){definitions.erase(*def);});
+	auto it_success = definitions.emplace(*shared.get(), std::weak_ptr<C4HudBarsDef>(shared));
 	if (!it_success.second)
 	{
 		// definition already existed, we have to override shared so that it is linked to
@@ -460,7 +459,7 @@ std::shared_ptr<C4HudBars> C4HudBarsUniquifier::DefineHudBars(C4AulContext *cthr
 	ProcessGroup(cthr, value_index, gfx, definition, bars, true);
 	C4HudBarsDef::PopulateNamesFromValues([=](StdStrBuf msg){throw C4AulExecError(cthr->Obj, FormatString("DefineHudBars: %s", msg.getData()).getData());}, bars, names);
 
-	auto def = UniqueifyDefinition(new C4HudBarsDef(gfx, bars, names));
+	auto def = UniqueifyDefinition(std::move(std::make_unique<C4HudBarsDef>(gfx, bars, names)));
 	return Instantiate(def);
 }
 
@@ -645,7 +644,7 @@ void C4HudBarsAdapt::CompileFunc(StdCompiler *comp) {
 	}
 	else
 	{
-		C4HudBarsDef *def = new C4HudBarsDef();
+		auto def = std::make_unique<C4HudBarsDef>();
 		{
 			C4HudBarsDef::Gfxs gfxs{};
 			std::vector<C4HudBarsDef::Gfx> temp;
@@ -672,7 +671,7 @@ void C4HudBarsAdapt::CompileFunc(StdCompiler *comp) {
 			bar.scale = static_cast<float>(scale) / 100.0f;
 		}
 
-		auto uniq_def = Game.HudBars.UniqueifyDefinition(def);
+		auto uniq_def = Game.HudBars.UniqueifyDefinition(std::move(def));
 		auto instance = Game.HudBars.Instantiate(uniq_def);
 		comp->Value(mkNamingAdapt(mkSTLContainerAdapt(instance->values), "Bar", std::vector<C4HudBar>{}));
 
