@@ -543,13 +543,18 @@ void C4HudBarsUniquifier::ProcessGraphics(C4AulContext *cthr, C4ValueHash &map, 
 		auto it_success = gfx.emplace(_key, C4HudBarsDef::Gfx(_key, _file, amount, scale));
 		if (!it_success.second)
 		{
-			throw C4AulExecError(cthr->Obj, FormatString("DefineHudBars %s duplicate key in gfx description ", _key).getData());
+			throw C4AulExecError(cthr->Obj, FormatString("DefineHudBars: duplicate key \"%s\" in gfx description ", _key).getData());
 		}
 	}
 }
 
 void C4HudBarsUniquifier::ProcessGroup(C4AulContext *cthr, int32_t &value_index, const C4HudBarsDef::Gfxs &graphics, const C4ValueArray &group, C4HudBarsDef::Bars &bars, bool advanceAlways)
 {
+	auto error = [&](const char *msg, C4Value &val) {
+		auto format = std::string("DefineHudBars: ") + msg;
+		throw C4AulExecError(cthr->Obj, FormatString(format.c_str(), val.GetDataString().getData()).getData());
+	};
+
 	int32_t size = group.GetSize();
 	for (int32_t i = 0; i < size; ++i)
 	{
@@ -563,7 +568,7 @@ void C4HudBarsUniquifier::ProcessGroup(C4AulContext *cthr, int32_t &value_index,
 			}
 			else
 			{
-				throw C4AulExecError(cthr->Obj, FormatString("DefineHudBars got unexpected value: %s", element.GetDataString().getData()).getData());
+				error("got unexpected value: %s", element);
 			}
 			break;
 		case C4V_Array:
@@ -575,17 +580,17 @@ void C4HudBarsUniquifier::ProcessGroup(C4AulContext *cthr, int32_t &value_index,
 				}
 				else
 				{
-					throw C4AulExecError(cthr->Obj, FormatString("DefineHudBars got unexpected value: %s", element.GetDataString().getData()).getData());
+					error("got unexpected value: %s", element);
 				}
 			}
 			else
 			{
-				throw C4AulExecError(cthr->Obj, FormatString("DefineHudBars groups in groups are not allowed: %s", element.GetDataString().getData()).getData());
+				error("groups in groups are not allowed: %s", element);
 			}
 			break;
 
 		default:
-			throw C4AulExecError(cthr->Obj, FormatString("DefineHudBars array or map expected but got: %s", element.GetDataString().getData()).getData());
+			error("array or map expected, got: %s", element);
 		}
 	}
 }
@@ -596,53 +601,40 @@ void C4HudBarsUniquifier::ProcessHudBar(C4AulContext *cthr, int32_t &value_index
 	auto *_name = name.getStr();
 	if (!_name)
 	{
-		throw C4AulExecError(cthr->Obj, FormatString("DefineHudBars: HudBar definition has no name: %s", name.GetDataString().getData()).getData());
+		throw C4AulExecError(cthr->Obj, FormatString("DefineHudBars: HudBar definition has invalid name, got: %s", name.GetDataString().getData()).getData());
 	}
+
+	auto error = [&](const char *property, C4Value &val) {
+		auto format = std::string("DefineHudBars: \"%s\" definition has invalid ") + property + ", got %s";
+		throw C4AulExecError(cthr->Obj, FormatString(format.c_str(), _name->Data.getData(), val.GetDataString().getData()).getData());
+	};
 
 	C4Value gfx = bar[C4VString("gfx")];
 	auto *_gfx = gfx.getStr();
-	if (!_gfx)
-	{
-		throw C4AulExecError(cthr->Obj, FormatString("DefineHudBars: HudBar definition has no gfx: %s", gfx.GetDataString().getData()).getData());
-	}
+	if (!_gfx) error("gfx", gfx);
 
 	C4Value physical = bar[C4VString("physical")];
 	auto _physical = static_cast<C4HudBarDef::Physical>(physical.getInt());
-	if (_physical & ~C4HudBarDef::EBP_All)
-	{
-		throw C4AulExecError(cthr->Obj, FormatString("DefineHudBars %s definition has invalid physical: %s", name.GetDataString().getData(), physical.GetDataString().getData()).getData());
-	}
+	if (_physical & ~C4HudBarDef::EBP_All) error("physical", physical);
 
 	C4Value hide = bar[C4VString("hide")];
 	auto _hide = C4HudBarDef::EBH_Empty;
 	if (hide != C4VNull) _hide = static_cast<C4HudBarDef::Hide>(hide.getInt());
-	if (_hide & ~C4HudBarDef::EBH_All)
-	{
-		throw C4AulExecError(cthr->Obj, FormatString("DefineHudBars %s definition has invalid hide: %s", name.GetDataString().getData(), hide.GetDataString().getData()).getData());
-	}
+	if (_hide & ~C4HudBarDef::EBH_All) error("hide", hide);
 
 	C4Value index = bar[C4VString("index")];
 	C4Value value = bar[C4VString("value")];
 	C4ValueInt _index = index.getInt();
 	C4ValueInt _value = value.getInt();
-	if (_index < 0)
-	{
-		throw C4AulExecError(cthr->Obj, FormatString("DefineHudBars %s definition has invalid index: %s", name.GetDataString().getData(), _index).getData());
-	}
-	if (_value < 0)
-	{
-		throw C4AulExecError(cthr->Obj, FormatString("DefineHudBars %s definition has invalid value: %s", name.GetDataString().getData(), _value).getData());
-	}
+	if (_index < 0) error("index", index);
+	if (_value < 0) error("value", value);
 
 	C4ValueInt _max = 1000000;
 	if (bar.contains(C4VString("max")))
 	{
 		auto max = bar[C4VString("max")];
 		_max = max.getInt();
-	}
-	if (_max < 0)
-	{
-		throw C4AulExecError(cthr->Obj, FormatString("DefineHudBars %s definition has invalid max: %s", name.GetDataString().getData(), _max).getData());
+		if (_max < 0) error("max", max);
 	}
 
 	bool _visible = true;
@@ -654,7 +646,7 @@ void C4HudBarsUniquifier::ProcessHudBar(C4AulContext *cthr, int32_t &value_index
 
 	{
 		const char* file = _gfx->Data.getData();
-		auto facet = GetFacet([&](StdStrBuf msg){throw C4AulExecError(cthr->Obj, FormatString("DefineHudBars %s %s", name.GetDataString().getData(), msg.getData()).getData());}, graphics, file);
+		auto facet = GetFacet([&](StdStrBuf msg){throw C4AulExecError(cthr->Obj, FormatString("DefineHudBars %s %s", _name->Data.getData(), msg.getData()).getData());}, graphics, file);
 
 		C4HudBarDef bar(_name->Data.getData(), file, facet, _index, _physical);
 		if(physical != C4VNull)
