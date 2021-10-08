@@ -86,14 +86,14 @@ C4HudBar *C4HudBars::BarVal(C4AulContext *cthr, const char *functionName, const 
 	return nullptr;
 }
 
-void C4HudBars::SetHudBar(C4AulContext *cthr, const std::string &name, int32_t value, int32_t max)
+void C4HudBars::SetHudBarValue(C4AulContext *cthr, const std::string &name, int32_t value, int32_t max)
 {
 	auto *barval = BarVal(cthr, "SetHudBar", name);
 	barval->value = value;
 	if(max > 0) barval->max = max;
 }
 
-void C4HudBars::SetHudBarVisible(C4AulContext *cthr, const std::string &name, bool visible)
+void C4HudBars::SetHudBarVisibility(C4AulContext *cthr, const std::string &name, bool visible)
 {
 	auto *barval = BarVal(cthr, "SetHudBarVisible", name);
 	barval->visible = visible;

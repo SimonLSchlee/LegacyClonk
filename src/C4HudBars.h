@@ -57,8 +57,8 @@ public:
 	C4HudBars(std::shared_ptr<C4HudBarsDef> _def) noexcept;
 
 	void DrawHudBars(C4Facet &cgo, C4Object &obj) const noexcept;
-	void SetHudBar(C4AulContext *cthr, const std::string &name, int32_t value, int32_t max = 0);
-	void SetHudBarVisible(C4AulContext *cthr, const std::string &name, bool visible);
+	void SetHudBarValue(C4AulContext *cthr, const std::string &name, int32_t value, int32_t max = 0);
+	void SetHudBarVisibility(C4AulContext *cthr, const std::string &name, bool visible);
 
 private:
 	C4HudBar *BarVal(C4AulContext *cthr, const char *functionName, const std::string &name);

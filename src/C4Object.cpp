@@ -2700,14 +2700,14 @@ bool C4Object::DefineHudBars(C4AulContext *cthr, C4ValueHash *graphics, C4ValueA
 	return false;
 }
 
-void C4Object::SetHudBar(C4AulContext *cthr, const char* name, int32_t value, int32_t max)
+void C4Object::SetHudBarValue(C4AulContext *cthr, const char* name, int32_t value, int32_t max)
 {
-	hudBars->SetHudBar(cthr, name, value, max);
+	hudBars->SetHudBarValue(cthr, name, value, max);
 }
 
-void C4Object::SetHudBarVisible(C4AulContext *cthr, const char* name, bool visible)
+void C4Object::SetHudBarVisibility(C4AulContext *cthr, const char* name, bool visible)
 {
-	hudBars->SetHudBarVisible(cthr, name, visible);
+	hudBars->SetHudBarVisibility(cthr, name, visible);
 }
 
 void C4Object::DrawHudBars(C4Facet &cgo)
