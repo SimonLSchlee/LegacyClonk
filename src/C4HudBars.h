@@ -30,6 +30,20 @@ class C4HudBars;
 #include <memory>
 #include <string>
 
+extern int32_t counter;
+extern int32_t alive;
+
+class LifetimeHelper
+{
+  int32_t number;
+	void Report(const char *event);
+public:
+  LifetimeHelper() :number(++counter) {++alive; Report("Start");}
+  ~LifetimeHelper() {--alive; Report("End");}
+	LifetimeHelper(const LifetimeHelper &other);
+	LifetimeHelper(LifetimeHelper &&other);
+};
+
 class C4HudBar
 {
 public:
@@ -43,7 +57,6 @@ public:
 
 	void CompileFunc(StdCompiler *comp);
 };
-
 
 class C4HudBarsDef;
 class C4Object;
@@ -153,6 +166,7 @@ public:
 	Gfxs  gfxs;
 	Bars  bars;
 	Names names;
+	LifetimeHelper helper;
 };
 
 namespace std

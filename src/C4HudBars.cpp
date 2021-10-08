@@ -34,6 +34,21 @@
 #include <vector>
 #include <unordered_map>
 
+int32_t counter = 0;
+int32_t alive = 0;
+
+void LifetimeHelper::Report(const char *event) {LogF("LivetimeHelper %d %s    counter: %d   alive: %d  address: %p", number, event, counter, alive, (void*)this);};
+
+LifetimeHelper::LifetimeHelper(const LifetimeHelper &other):number(other.number)
+{
+	++alive;
+  LogF("LivetimeHelper %d    counter: %d   alive: %d   copy constructed from %p to %p", number, counter, alive, (void*)&other, (void*)this);
+}
+LifetimeHelper::LifetimeHelper(LifetimeHelper &&other):number(other.number)
+{
+	++alive;
+  LogF("LivetimeHelper %d    counter: %d   alive: %d   move constructed from %p to %p", number, counter, alive, (void*)&other, (void*)this);
+}
 
 C4HudBar::C4HudBar(): value(0), max(1000000), visible(true) {}
 
@@ -295,12 +310,12 @@ void C4HudBarsDef::Gfx::CompileFunc(StdCompiler *comp)
 	comp->Value(mkNamingAdapt(scale, "Scale"));
 }
 
-C4HudBarsDef::C4HudBarsDef(const Gfxs &_gfxs, const Bars &_bars): gfxs(_gfxs), bars(_bars)
+C4HudBarsDef::C4HudBarsDef(const Gfxs &_gfxs, const Bars &_bars): gfxs(_gfxs), bars(_bars), helper()
 {
 	PopulateNamesFromValues([=](StdStrBuf msg){LogFatal(msg.getData());}, bars, names);
 }
 
-C4HudBarsDef::C4HudBarsDef(const Gfxs &_gfxs, const C4HudBarsDef::Bars &_bars, const C4HudBarsDef::Names &_names): gfxs(_gfxs), bars(_bars), names(_names)
+C4HudBarsDef::C4HudBarsDef(const Gfxs &_gfxs, const C4HudBarsDef::Bars &_bars, const C4HudBarsDef::Names &_names): gfxs(_gfxs), bars(_bars), names(_names), helper()
 {
 }
 
