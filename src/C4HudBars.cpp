@@ -407,7 +407,7 @@ std::shared_ptr<C4FacetExID> C4HudBarsUniquifier::GetFacet(const std::function<v
 	// TODO FIXME why wasn't this already called before we get here?
 	Game.GraphicsResource.RegisterMainGroups();
 
-	auto facet = std::shared_ptr<C4FacetExID>(new C4FacetExID(), [=](C4FacetExID *facet){graphics.erase(key);});
+	auto facet = std::shared_ptr<C4FacetExID>(new C4FacetExID(), [=](C4FacetExID *facet){graphics.erase(key); delete facet;});
 	bool success = Game.GraphicsResource.LoadFile(*facet, file.c_str(), Game.GraphicsResource.Files);
 	if(!success)
 	{
@@ -431,7 +431,7 @@ std::shared_ptr<C4HudBarsDef> C4HudBarsUniquifier::UniqueifyDefinition(std::uniq
 	// that either ends up being the canonical shared_ptr,
 	// or goes out of scope deleting the definition.
 	// the weak ptr remembers the custom deleter
-	auto shared = std::shared_ptr<C4HudBarsDef>(definition.release(), [=](C4HudBarsDef *def){definitions.erase(*def);});
+	auto shared = std::shared_ptr<C4HudBarsDef>(definition.release(), [=](C4HudBarsDef *def){definitions.erase(*def);delete def;});
 	auto it_success = definitions.emplace(*shared.get(), std::weak_ptr<C4HudBarsDef>(shared));
 	if (!it_success.second)
 	{
