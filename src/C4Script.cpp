@@ -1733,16 +1733,16 @@ static bool FnDefineHudBars(C4AulContext *cthr, C4ValueHash *pMap, C4ValueArray 
 	return pObj->DefineHudBars(cthr, pMap, pArray);
 }
 
-static void FnSetHudBar(C4AulContext *cthr, C4String *szName, C4ValueInt iNewValue, C4Object *pObj, C4ValueInt iNewMax)
+static void FnSetHudBarValue(C4AulContext *cthr, C4String *szName, C4ValueInt iNewValue, C4Object *pObj, C4ValueInt iNewMax)
 {
 	if (!pObj) pObj = cthr->Obj; if (!pObj) return;
-	return pObj->SetHudBar(cthr, FnStringPar(szName), iNewValue, iNewMax);
+	return pObj->SetHudBarValue(cthr, FnStringPar(szName), iNewValue, iNewMax);
 }
 
-static void FnSetHudBarVisible(C4AulContext *cthr, C4String *szName, bool fVisible, C4Object *pObj)
+static void FnSetHudBarVisibility(C4AulContext *cthr, C4String *szName, bool fVisible, C4Object *pObj)
 {
 	if (!pObj) pObj = cthr->Obj; if (!pObj) return;
-	return pObj->SetHudBarVisible(cthr, FnStringPar(szName), fVisible);
+	return pObj->SetHudBarVisibility(cthr, FnStringPar(szName), fVisible);
 }
 
 // Check / Status
@@ -6844,8 +6844,8 @@ void InitFunctionMap(C4AulScriptEngine *pEngine)
 	AddFunc(pEngine, "SetMenuDecoration",               FnSetMenuDecoration);
 	AddFunc(pEngine, "SetMenuTextProgress",             FnSetMenuTextProgress);
 	AddFunc(pEngine, "DefineHudBars",                   FnDefineHudBars);
-	AddFunc(pEngine, "SetHudBar",                       FnSetHudBar);
-	AddFunc(pEngine, "SetHudBarVisible",                FnSetHudBarVisible);
+	AddFunc(pEngine, "SetHudBarValue",                  FnSetHudBarValue);
+	AddFunc(pEngine, "SetHudBarVisibility",             FnSetHudBarVisibility);
 	AddFunc(pEngine, "SetSeason",                       FnSetSeason);
 	AddFunc(pEngine, "GetSeason",                       FnGetSeason);
 	AddFunc(pEngine, "SetClimate",                      FnSetClimate);

@@ -50,13 +50,15 @@ LifetimeHelper::LifetimeHelper(LifetimeHelper &&other):number(other.number)
   LogF("LivetimeHelper %d    counter: %d   alive: %d   move constructed from %p to %p", number, counter, alive, (void*)&other, (void*)this);
 }
 
-C4HudBar::C4HudBar(): value(0), max(1000000), visible(true) {}
-
-C4HudBar::C4HudBar(int32_t _value, int32_t _max, bool _visible)
-	:value(_value), max(_max), visible(_visible)
+C4HudBar::C4HudBar() noexcept
+  : value{0}, max{1000000}, visible{true}
 {}
 
-bool C4HudBar::operator==(const C4HudBar &rhs) const
+C4HudBar::C4HudBar(int32_t _value, int32_t _max, bool _visible) noexcept
+	: value{_value}, max{_max}, visible{_visible}
+{}
+
+bool C4HudBar::operator==(const C4HudBar &rhs) const noexcept
 {
 	return value == rhs.value && max == rhs.max && visible == rhs.visible;
 }
@@ -69,8 +71,8 @@ void C4HudBar::CompileFunc(StdCompiler *comp)
 }
 
 
-C4HudBars::C4HudBars(std::shared_ptr<C4HudBarsDef> _def):def(_def) {
-	for (const auto &bardef: def->bars)
+C4HudBars::C4HudBars(std::shared_ptr<const C4HudBarsDef> _def) noexcept : def{_def} {
+	for (const auto &bardef : def->bars)
 		if (bardef.physical == C4HudBarDef::EBP_None)
 			values.emplace_back(bardef.value, bardef.max, bardef.visible);
 }
@@ -99,25 +101,25 @@ C4HudBar *C4HudBars::BarVal(C4AulContext *cthr, const char *functionName, const 
 	return nullptr;
 }
 
-void C4HudBars::SetHudBar(C4AulContext *cthr, const std::string &name, int32_t value, int32_t max)
+void C4HudBars::SetHudBarValue(C4AulContext *cthr, const std::string &name, int32_t value, int32_t max)
 {
 	auto *barval = BarVal(cthr, "SetHudBar", name);
 	barval->value = value;
 	if(max > 0) barval->max = max;
 }
 
-void C4HudBars::SetHudBarVisible(C4AulContext *cthr, const std::string &name, bool visible)
+void C4HudBars::SetHudBarVisibility(C4AulContext *cthr, const std::string &name, bool visible)
 {
 	auto *barval = BarVal(cthr, "SetHudBarVisible", name);
 	barval->visible = visible;
 }
 
-void C4HudBars::DrawHudBars(C4Facet &cgo, C4Object &obj)
+void C4HudBars::DrawHudBars(C4Facet &cgo, C4Object &obj) const noexcept
 {
 	bool needsAdvance = false;
 	int32_t maxWidth = 0;
 
-	for (const auto &bardef: def->bars)
+	for (const auto &bardef : def->bars)
 	{
 		int32_t value = 0;
 		int32_t max   = 0;
@@ -157,19 +159,23 @@ void C4HudBars::DrawHudBars(C4Facet &cgo, C4Object &obj)
 		{
 			if (needsAdvance && bardef.advance)
 			{
-				cgo.X += maxWidth; maxWidth = 0; needsAdvance = false;
+				cgo.X += maxWidth;
+				maxWidth = 0;
+				needsAdvance = false;
 			}
 			continue;
 		}
 
-		int32_t width = bardef.facet->Wdt;
+		const int32_t width = bardef.facet->Wdt;
 		cgo.Wdt = width;
 		cgo.DrawEnergyLevelEx(value, max, *bardef.facet, bardef.index, bardef.scale);
 
 		maxWidth = std::max<int32_t>(maxWidth, width+1);
 		if (bardef.advance)
 		{
-			cgo.X += maxWidth; maxWidth = 0; needsAdvance = false;
+			cgo.X += maxWidth;
+			maxWidth = 0;
+			needsAdvance = false;
 		}
 		else
 		{
@@ -179,19 +185,19 @@ void C4HudBars::DrawHudBars(C4Facet &cgo, C4Object &obj)
 }
 
 
-C4HudBarDef::C4HudBarDef():
-	name(), physical(EBP_None), hide(EBH_Empty),
-	gfx(), facet(), index(), advance(true),
-	value_index(-1), value(0), max(1000000), visible(true), scale(1.0f)
+C4HudBarDef::C4HudBarDef() noexcept :
+	name{}, physical{EBP_None}, hide{EBH_Empty},
+	gfx{}, facet{}, index{}, advance{true},
+	value_index{-1}, value{0}, max{1000000}, visible{true}, scale{1.0f}
 {}
 
-C4HudBarDef::C4HudBarDef(std::string_view _name, std::string_view _gfx, const std::shared_ptr<C4FacetExID> &_facet, int32_t _index, Physical _physical):
-	name(_name), physical(_physical), hide(DefaultHide(physical)),
-	gfx(_gfx), facet(_facet), index(_index), advance(true),
-	value_index(-1), value(0), max(1000000), visible(true), scale(1.0f)
+C4HudBarDef::C4HudBarDef(std::string_view _name, std::string_view _gfx, const std::shared_ptr<C4FacetExID> &_facet, int32_t _index, Physical _physical) noexcept :
+	name{_name}, physical{_physical}, hide{DefaultHide(physical)},
+	gfx{_gfx}, facet{_facet}, index{_index}, advance{true},
+	value_index{-1}, value{0}, max{1000000}, visible{true}, scale{1.0f}
 {}
 
-bool C4HudBarDef::operator==(const C4HudBarDef &rhs) const
+bool C4HudBarDef::operator==(const C4HudBarDef &rhs) const noexcept
 {
 	return
 		name == rhs.name &&
@@ -206,7 +212,7 @@ bool C4HudBarDef::operator==(const C4HudBarDef &rhs) const
 		visible == rhs.visible;
 }
 
-C4HudBarDef::Hide C4HudBarDef::DefaultHide(C4HudBarDef::Physical physical) {
+C4HudBarDef::Hide C4HudBarDef::DefaultHide(C4HudBarDef::Physical physical) noexcept {
 	switch (physical)
 	{
 	case EBP_Energy: return EBH_Never | EBH_HideHUDBars;
@@ -217,7 +223,7 @@ C4HudBarDef::Hide C4HudBarDef::DefaultHide(C4HudBarDef::Physical physical) {
 	}
 }
 
-int32_t C4HudBarDef::DefaultIndex(C4HudBarDef::Physical physical) {
+int32_t C4HudBarDef::DefaultIndex(C4HudBarDef::Physical physical) noexcept {
 	switch (physical)
 	{
 	case EBP_Energy: return 0;
@@ -228,7 +234,7 @@ int32_t C4HudBarDef::DefaultIndex(C4HudBarDef::Physical physical) {
 	}
 }
 
-std::size_t C4HudBarDef::GetHash() const
+std::size_t C4HudBarDef::GetHash() const noexcept
 {
 	std::size_t result = std::hash<std::string>{}(name);
 	HashCombine(result, std::hash<int32_t>{}(physical));
@@ -276,16 +282,16 @@ void C4HudBarDef::CompileFunc(StdCompiler *comp)
 	// gfx and scale are restored from def.gfxs
 }
 
-inline C4HudBarDef::Hide operator|(C4HudBarDef::Hide a, C4HudBarDef::Hide b)
+inline const C4HudBarDef::Hide operator|(const C4HudBarDef::Hide a, const C4HudBarDef::Hide b)
 {
-	return static_cast<C4HudBarDef::Hide>(static_cast<int32_t>(a) | static_cast<int32_t>(b));
+	return static_cast<const C4HudBarDef::Hide>(static_cast<const int32_t>(a) | static_cast<const int32_t>(b));
 }
 
 
 namespace
 {
 	template <typename Map>
-	bool map_compare (Map const &lhs, Map const &rhs)
+	bool MapCompare (Map const &lhs, Map const &rhs) noexcept
 	{
 		return lhs.size() == rhs.size()
 			&& std::equal(lhs.begin(), lhs.end(),
@@ -293,11 +299,11 @@ namespace
 	}
 }
 
-C4HudBarsDef::Gfx::Gfx():key(), file(), amount(0), scale(0) {}
+C4HudBarsDef::Gfx::Gfx() noexcept : key{}, file{}, amount{0}, scale{0} {}
 
-C4HudBarsDef::Gfx::Gfx(std::string k, std::string f, int32_t _a, int32_t _s):key(k), file(f), amount(_a), scale(_s) {}
+C4HudBarsDef::Gfx::Gfx(std::string k, std::string f, int32_t _a, int32_t _s) noexcept : key{k}, file{f}, amount{_a}, scale{_s} {}
 
-bool C4HudBarsDef::Gfx::operator==(const Gfx &rhs) const
+bool C4HudBarsDef::Gfx::operator==(const Gfx &rhs) const noexcept
 {
 	return key == rhs.key && file == rhs.file && amount == rhs.amount && scale == rhs.scale;
 }
@@ -310,21 +316,21 @@ void C4HudBarsDef::Gfx::CompileFunc(StdCompiler *comp)
 	comp->Value(mkNamingAdapt(scale, "Scale"));
 }
 
-C4HudBarsDef::C4HudBarsDef(const Gfxs &_gfxs, const Bars &_bars): gfxs(_gfxs), bars(_bars), helper()
+C4HudBarsDef::C4HudBarsDef(const Gfxs &_gfxs, const Bars &_bars) : gfxs{_gfxs}, bars{_bars}, helper{}
 {
 	PopulateNamesFromValues([=](StdStrBuf msg){LogFatal(msg.getData());}, bars, names);
 }
 
-C4HudBarsDef::C4HudBarsDef(const Gfxs &_gfxs, const C4HudBarsDef::Bars &_bars, const C4HudBarsDef::Names &_names): gfxs(_gfxs), bars(_bars), names(_names), helper()
+C4HudBarsDef::C4HudBarsDef(const Gfxs &_gfxs, const C4HudBarsDef::Bars &_bars, const C4HudBarsDef::Names &_names) noexcept : gfxs{_gfxs}, bars{_bars}, names{_names}, helper{}
 {
 }
 
 void C4HudBarsDef::PopulateNamesFromValues(const std::function<void(StdStrBuf)> &error, const C4HudBarsDef::Bars &bars, C4HudBarsDef::Names &names)
 {
 	int32_t i = 0;
-	for (auto bar: bars)
+	for (const auto &bar : bars)
 	{
-		auto success = names.emplace(bar.name, i);
+		const auto success = names.emplace(bar.name, i);
 		if (!success.second)
 		{
 			error(FormatString("C4HudBarsDef %s definition, names must be unique, duplicate detected", bar.name.c_str()));
@@ -333,15 +339,15 @@ void C4HudBarsDef::PopulateNamesFromValues(const std::function<void(StdStrBuf)> 
 	}
 }
 
-bool C4HudBarsDef::operator==(const C4HudBarsDef &rhs) const
+bool C4HudBarsDef::operator==(const C4HudBarsDef &rhs) const noexcept
 {
-	return map_compare(gfxs, rhs.gfxs) && bars == rhs.bars;
+	return MapCompare(gfxs, rhs.gfxs) && bars == rhs.bars;
 }
 
-std::size_t C4HudBarsDef::GetHash() const
+std::size_t C4HudBarsDef::GetHash() const noexcept
 {
 	std::size_t result = 0;
-	for (auto &gfx: gfxs)
+	for (const auto &gfx : gfxs)
 	{
 		HashCombine(result, std::hash<std::string>{}(gfx.second.key));
 		HashCombine(result, std::hash<std::string>{}(gfx.second.file));
@@ -349,13 +355,13 @@ std::size_t C4HudBarsDef::GetHash() const
 		HashCombine(result, std::hash<uint32_t>{}(gfx.second.scale));
 	}
 
-	for (auto &bardef: bars)
+	for (const auto &bardef : bars)
 		HashCombine(result, bardef.GetHash());
 
 	return result;
 }
 
-std::size_t std::hash<C4HudBarsDef>::operator()(const C4HudBarsDef &value) const noexcept
+std::size_t std::hash<const C4HudBarsDef>::operator()(const C4HudBarsDef &value) const noexcept
 {
 	return value.GetHash();
 }
@@ -366,15 +372,15 @@ std::shared_ptr<C4HudBars> C4HudBarsUniquifier::DefaultBars()
 	if(!defaultBars)
 	{
 		const auto file = "EnergyBars";
-		auto gfxs = C4HudBarsDef::Gfxs{{file, C4HudBarsDef::Gfx(file, file, 3, 100)}};
-		auto gfx = GetFacet([=](StdStrBuf msg){LogFatal(FormatString("could not load DefaultBars \"%s\"", file).getData());}, gfxs, file);
-		auto def = UniqueifyDefinition(
+		const auto gfxs = C4HudBarsDef::Gfxs{{file, C4HudBarsDef::Gfx{file, file, 3, 100}}};
+		const auto gfx = GetFacet([=](StdStrBuf msg){LogFatal(FormatString("could not load DefaultBars \"%s\"", file).getData());}, gfxs, file);
+		const auto def = UniqueifyDefinition(
 			std::move(std::make_unique<C4HudBarsDef>(
 		    gfxs,
 		    C4HudBarsDef::Bars{
-		      C4HudBarDef("Energy", file, gfx, 0, C4HudBarDef::EBP_Energy),
-		      C4HudBarDef("Magic",  file, gfx, 1, C4HudBarDef::EBP_Magic),
-		      C4HudBarDef("Breath", file, gfx, 2, C4HudBarDef::EBP_Breath)
+		      C4HudBarDef{"Energy", file, gfx, 0, C4HudBarDef::EBP_Energy},
+		      C4HudBarDef{"Magic",  file, gfx, 1, C4HudBarDef::EBP_Magic},
+		      C4HudBarDef{"Breath", file, gfx, 2, C4HudBarDef::EBP_Breath}
 		})));
 		defaultBars = Instantiate(def);
 	}
@@ -382,14 +388,9 @@ std::shared_ptr<C4HudBars> C4HudBarsUniquifier::DefaultBars()
 	return defaultBars;
 }
 
-void C4HudBarsUniquifier::RemoveDef(const C4HudBarsDef &def)
-{
-	definitions.erase(def);
-}
-
 std::shared_ptr<C4FacetExID> C4HudBarsUniquifier::GetFacet(const std::function<void(StdStrBuf)> &error, const C4HudBarsDef::Gfxs &gfxs, std::string_view gfx)
 {
-	std::string key(gfx);
+	const std::string key(gfx);
 
 	try
 	{
@@ -422,42 +423,51 @@ std::shared_ptr<C4FacetExID> C4HudBarsUniquifier::GetFacet(const std::function<v
 	// TODO FIXME why wasn't this already called before we get here?
 	Game.GraphicsResource.RegisterMainGroups();
 
-	auto facet = std::shared_ptr<C4FacetExID>(new C4FacetExID(), [=](C4FacetExID *facet){graphics.erase(key); delete facet;});
-	bool success = Game.GraphicsResource.LoadFile(*facet, file.c_str(), Game.GraphicsResource.Files);
+	const auto deleter = [=](C4FacetExID *facet)
+	{
+		graphics.erase(key);
+		delete facet;
+	};
+	const auto facet = std::shared_ptr<C4FacetExID>(new C4FacetExID(), deleter);
+	const bool success = Game.GraphicsResource.LoadFile(*facet, file.c_str(), Game.GraphicsResource.Files);
 	if(!success)
 	{
 		error(FormatString("could not load custom energy bar graphic \"%s\"", file.c_str()));
 		return nullptr;
 	}
 
-	int32_t bar_wdt = facet->Surface->Wdt / (amount * 2);
-	int32_t bar_hgt = facet->Surface->Hgt / 3;
-	bar_wdt = (bar_wdt*100) / scale;
-	bar_hgt = (bar_hgt*100) / scale;
-	facet->Set(facet->Surface, 0, 0, bar_wdt, bar_hgt);
+	const int32_t barWdt = facet->Surface->Wdt / (amount * 2);
+	const int32_t barHgt = facet->Surface->Hgt / 3;
+	const int32_t scaledWdt = (barWdt*100) / scale;
+	const int32_t scaledHgt = (barHgt*100) / scale;
+	facet->Set(facet->Surface, 0, 0, scaledWdt, scaledHgt);
 
 	graphics.emplace(key, std::weak_ptr<C4FacetExID>(facet));
 	return facet;
 }
 
-std::shared_ptr<C4HudBarsDef> C4HudBarsUniquifier::UniqueifyDefinition(std::unique_ptr<C4HudBarsDef> definition)
+std::shared_ptr<const C4HudBarsDef> C4HudBarsUniquifier::UniqueifyDefinition(std::unique_ptr<C4HudBarsDef> definition)
 {
 	// definition always gets owned by a shared_ptr,
 	// that either ends up being the canonical shared_ptr,
 	// or goes out of scope deleting the definition.
 	// the weak ptr remembers the custom deleter
-	auto shared = std::shared_ptr<C4HudBarsDef>(definition.release(), [=](C4HudBarsDef *def){definitions.erase(*def);delete def;});
-	auto it_success = definitions.emplace(*shared.get(), std::weak_ptr<C4HudBarsDef>(shared));
+	const auto deleter = [=](const C4HudBarsDef *def)
+	{
+		definitions.erase(*def);
+		delete def;
+	};
+	const auto shared = std::shared_ptr<const C4HudBarsDef>(definition.release(), deleter);
+	const auto it_success = definitions.emplace(*shared.get(), std::weak_ptr<const C4HudBarsDef>(shared));
 	if (!it_success.second)
 	{
-		// definition already existed, we have to override shared so that it is linked to
-		// the same control block that was used to create the first shared ptr
-		shared = it_success.first->second.lock();
+		// definition already existed, create shared ptr from existing weak_ptr
+		return it_success.first->second.lock();
 	}
 	return shared;
 }
 
-std::shared_ptr<C4HudBars> C4HudBarsUniquifier::Instantiate(std::shared_ptr<C4HudBarsDef> definition)
+std::shared_ptr<C4HudBars> C4HudBarsUniquifier::Instantiate(std::shared_ptr<const C4HudBarsDef> definition)
 {
 	if(definition == nullptr) return nullptr;
 	return std::make_shared<C4HudBars>(definition);
@@ -472,7 +482,8 @@ std::shared_ptr<C4HudBars> C4HudBarsUniquifier::DefineHudBars(C4AulContext *cthr
 
 	ProcessGraphics(cthr, graphics, gfx);
 	ProcessGroup(cthr, value_index, gfx, definition, bars, true);
-	C4HudBarsDef::PopulateNamesFromValues([=](StdStrBuf msg){throw C4AulExecError(cthr->Obj, FormatString("DefineHudBars: %s", msg.getData()).getData());}, bars, names);
+	const auto error = [=](StdStrBuf msg){throw C4AulExecError(cthr->Obj, FormatString("DefineHudBars: %s", msg.getData()).getData());};
+	C4HudBarsDef::PopulateNamesFromValues(error, bars, names);
 
 	auto def = UniqueifyDefinition(std::move(std::make_unique<C4HudBarsDef>(gfx, bars, names)));
 	return Instantiate(def);
@@ -510,7 +521,7 @@ void C4HudBarsUniquifier::ProcessGraphics(C4AulContext *cthr, C4ValueHash &map, 
 		if (amount == 0) amount = 1;
 		if (scale == 0) scale = 100;
 
-		auto it_success = gfx.emplace(_key, C4HudBarsDef::Gfx(_key, _file, amount, scale));
+		const auto it_success = gfx.emplace(_key, C4HudBarsDef::Gfx{_key, _file, amount, scale});
 		if (!it_success.second)
 		{
 			throw C4AulExecError(cthr->Obj, FormatString("DefineHudBars: duplicate key \"%s\" in gfx description ", _key).getData());
@@ -520,12 +531,12 @@ void C4HudBarsUniquifier::ProcessGraphics(C4AulContext *cthr, C4ValueHash &map, 
 
 void C4HudBarsUniquifier::ProcessGroup(C4AulContext *cthr, int32_t &value_index, const C4HudBarsDef::Gfxs &graphics, const C4ValueArray &group, C4HudBarsDef::Bars &bars, bool advanceAlways)
 {
-	auto error = [&](const char *msg, C4Value &val) {
+	const auto error = [&](const char *msg, C4Value &val) {
 		auto format = std::string("DefineHudBars: ") + msg;
 		throw C4AulExecError(cthr->Obj, FormatString(format.c_str(), val.GetDataString().getData()).getData());
 	};
 
-	int32_t size = group.GetSize();
+	const int32_t size = group.GetSize();
 	for (int32_t i = 0; i < size; ++i)
 	{
 		C4Value element = group[i];
@@ -574,7 +585,7 @@ void C4HudBarsUniquifier::ProcessHudBar(C4AulContext *cthr, int32_t &value_index
 		throw C4AulExecError(cthr->Obj, FormatString("DefineHudBars: HudBar definition has invalid name, got: %s", name.GetDataString().getData()).getData());
 	}
 
-	auto error = [&](const char *property, C4Value &val) {
+	const auto error = [&](const char *property, C4Value &val) {
 		auto format = std::string("DefineHudBars: \"%s\" definition has invalid ") + property + ", got %s";
 		throw C4AulExecError(cthr->Obj, FormatString(format.c_str(), _name->Data.getData(), val.GetDataString().getData()).getData());
 	};
@@ -615,8 +626,12 @@ void C4HudBarsUniquifier::ProcessHudBar(C4AulContext *cthr, int32_t &value_index
 	}
 
 	{
-		const char* file = _gfx->Data.getData();
-		auto facet = GetFacet([&](StdStrBuf msg){throw C4AulExecError(cthr->Obj, FormatString("DefineHudBars %s %s", _name->Data.getData(), msg.getData()).getData());}, graphics, file);
+		const auto file = _gfx->Data.getData();
+		const auto facetError = [&](StdStrBuf msg)
+		{
+			throw C4AulExecError(cthr->Obj, FormatString("DefineHudBars %s %s", _name->Data.getData(), msg.getData()).getData());
+		};
+		const auto facet = GetFacet(facetError, graphics, file);
 
 		C4HudBarDef bar(_name->Data.getData(), file, facet, _index, _physical);
 		if(physical != C4VNull)
@@ -648,11 +663,13 @@ void C4HudBarsAdapt::CompileFunc(StdCompiler *comp) {
 		if (bars)
 		{
 			std::vector<C4HudBarsDef::Gfx> temp;
-			for (auto it: bars->def->gfxs)
-				temp.push_back(it.second);
+			for (const auto it : bars->def->gfxs)
+				temp.emplace_back(it.second);
 
 			comp->Value(mkNamingAdapt(mkSTLContainerAdapt(temp), "Gfx", std::vector<C4HudBarsDef::Gfx>{}));
-			comp->Value(mkNamingAdapt(mkSTLContainerAdapt(bars->def->bars), "Def", C4HudBarsDef::Bars{}));
+
+      auto *def = const_cast<C4HudBarsDef*>(bars->def.get());
+			comp->Value(mkNamingAdapt(mkSTLContainerAdapt(def->bars), "Def", C4HudBarsDef::Bars{}));
 			comp->Value(mkNamingAdapt(mkSTLContainerAdapt(bars->values), "Bar", std::vector<C4HudBar>{}));
 		}
 
@@ -661,13 +678,13 @@ void C4HudBarsAdapt::CompileFunc(StdCompiler *comp) {
 	{
 		auto def = std::make_unique<C4HudBarsDef>();
 		{
-			C4HudBarsDef::Gfxs gfxs{};
+			C4HudBarsDef::Gfxs gfxs;
 			std::vector<C4HudBarsDef::Gfx> temp;
 			comp->Value(mkNamingAdapt(mkSTLContainerAdapt(temp), "Gfx", std::vector<C4HudBarsDef::Gfx>{}));
-			for (auto &gfx: temp)
+			for (const auto &gfx : temp)
 				gfxs.emplace(gfx.key, gfx);
 
-			C4HudBarsDef::Bars bars{};
+			C4HudBarsDef::Bars bars;
 			comp->Value(mkNamingAdapt(mkSTLContainerAdapt(bars), "Def", C4HudBarsDef::Bars{}));
 
 			def->gfxs.swap(gfxs);
@@ -675,19 +692,20 @@ void C4HudBarsAdapt::CompileFunc(StdCompiler *comp) {
 		}
 
 		// get facets and restore scale from gfxs
-		for (auto &bar: def->bars)
+		const auto facetError = [=](StdStrBuf msg){comp->Warn("Error loading HudBars %s", msg.getData());};
+		for (auto &bar : def->bars)
 		{
-			bar.facet = Game.HudBars.GetFacet([&](StdStrBuf msg){comp->Warn("Error loading HudBars %s", msg.getData());}, def->gfxs, bar.gfx.c_str());
+			bar.facet = Game.HudBars.GetFacet(facetError, def->gfxs, bar.gfx.c_str());
 			if (bar.facet == nullptr) {
 				bars = Game.HudBars.DefaultBars();
 				return;
 			}
-			auto scale = def->gfxs.at(bar.gfx).scale;
+			const auto scale = def->gfxs.at(bar.gfx).scale;
 			bar.scale = static_cast<float>(scale) / 100.0f;
 		}
 
-		auto uniq_def = Game.HudBars.UniqueifyDefinition(std::move(def));
-		auto instance = Game.HudBars.Instantiate(uniq_def);
+		const auto uniq_def = Game.HudBars.UniqueifyDefinition(std::move(def));
+		const auto instance = Game.HudBars.Instantiate(uniq_def);
 		comp->Value(mkNamingAdapt(mkSTLContainerAdapt(instance->values), "Bar", std::vector<C4HudBar>{}));
 
 		bars = instance;
