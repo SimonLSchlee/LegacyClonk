@@ -56,7 +56,7 @@ void C4HudBar::CompileFunc(StdCompiler *comp)
 }
 
 
-C4HudBars::C4HudBars(std::shared_ptr<C4HudBarsDef> _def) noexcept : def{_def} {
+C4HudBars::C4HudBars(std::shared_ptr<const C4HudBarsDef> _def) noexcept : def{_def} {
 	for (const auto &bardef : def->bars)
 		if (bardef.physical == C4HudBarDef::EBP_None)
 			values.emplace_back(bardef.value, bardef.max, bardef.visible);
@@ -267,9 +267,9 @@ void C4HudBarDef::CompileFunc(StdCompiler *comp)
 	// gfx and scale are restored from def.gfxs
 }
 
-inline C4HudBarDef::Hide operator|(C4HudBarDef::Hide a, C4HudBarDef::Hide b)
+inline const C4HudBarDef::Hide operator|(const C4HudBarDef::Hide a, const C4HudBarDef::Hide b)
 {
-	return static_cast<C4HudBarDef::Hide>(static_cast<int32_t>(a) | static_cast<int32_t>(b));
+	return static_cast<const C4HudBarDef::Hide>(static_cast<const int32_t>(a) | static_cast<const int32_t>(b));
 }
 
 
@@ -346,7 +346,7 @@ std::size_t C4HudBarsDef::GetHash() const noexcept
 	return result;
 }
 
-std::size_t std::hash<C4HudBarsDef>::operator()(const C4HudBarsDef &value) const noexcept
+std::size_t std::hash<const C4HudBarsDef>::operator()(const C4HudBarsDef &value) const noexcept
 {
 	return value.GetHash();
 }
@@ -371,11 +371,6 @@ std::shared_ptr<C4HudBars> C4HudBarsUniquifier::DefaultBars()
 	}
 
 	return defaultBars;
-}
-
-void C4HudBarsUniquifier::RemoveDef(const C4HudBarsDef &def) noexcept
-{
-	definitions.erase(def);
 }
 
 std::shared_ptr<C4FacetExID> C4HudBarsUniquifier::GetFacet(const std::function<void(StdStrBuf)> &error, const C4HudBarsDef::Gfxs &gfxs, std::string_view gfx)
@@ -436,29 +431,28 @@ std::shared_ptr<C4FacetExID> C4HudBarsUniquifier::GetFacet(const std::function<v
 	return facet;
 }
 
-std::shared_ptr<C4HudBarsDef> C4HudBarsUniquifier::UniqueifyDefinition(std::unique_ptr<C4HudBarsDef> definition)
+std::shared_ptr<const C4HudBarsDef> C4HudBarsUniquifier::UniqueifyDefinition(std::unique_ptr<C4HudBarsDef> definition)
 {
 	// definition always gets owned by a shared_ptr,
 	// that either ends up being the canonical shared_ptr,
 	// or goes out of scope deleting the definition.
 	// the weak ptr remembers the custom deleter
-	const auto deleter = [=](C4HudBarsDef *def)
+	const auto deleter = [=](const C4HudBarsDef *def)
 	{
 		definitions.erase(*def);
 		delete def;
 	};
-	auto shared = std::shared_ptr<C4HudBarsDef>(definition.release(), deleter);
-	const auto it_success = definitions.emplace(*shared.get(), std::weak_ptr<C4HudBarsDef>(shared));
+	const auto shared = std::shared_ptr<const C4HudBarsDef>(definition.release(), deleter);
+	const auto it_success = definitions.emplace(*shared.get(), std::weak_ptr<const C4HudBarsDef>(shared));
 	if (!it_success.second)
 	{
-		// definition already existed, we have to override shared so that it is linked to
-		// the same control block that was used to create the first shared ptr
-		shared = it_success.first->second.lock();
+		// definition already existed, create shared ptr from existing weak_ptr
+		return it_success.first->second.lock();
 	}
 	return shared;
 }
 
-std::shared_ptr<C4HudBars> C4HudBarsUniquifier::Instantiate(std::shared_ptr<C4HudBarsDef> definition)
+std::shared_ptr<C4HudBars> C4HudBarsUniquifier::Instantiate(std::shared_ptr<const C4HudBarsDef> definition)
 {
 	if(definition == nullptr) return nullptr;
 	return std::make_shared<C4HudBars>(definition);
@@ -658,7 +652,9 @@ void C4HudBarsAdapt::CompileFunc(StdCompiler *comp) {
 				temp.emplace_back(it.second);
 
 			comp->Value(mkNamingAdapt(mkSTLContainerAdapt(temp), "Gfx", std::vector<C4HudBarsDef::Gfx>{}));
-			comp->Value(mkNamingAdapt(mkSTLContainerAdapt(bars->def->bars), "Def", C4HudBarsDef::Bars{}));
+
+      auto *def = const_cast<C4HudBarsDef*>(bars->def.get());
+			comp->Value(mkNamingAdapt(mkSTLContainerAdapt(def->bars), "Def", C4HudBarsDef::Bars{}));
 			comp->Value(mkNamingAdapt(mkSTLContainerAdapt(bars->values), "Bar", std::vector<C4HudBar>{}));
 		}
 

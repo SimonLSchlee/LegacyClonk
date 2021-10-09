@@ -51,10 +51,10 @@ class C4Object;
 class C4HudBars
 {
 public:
-	std::shared_ptr<C4HudBarsDef> def;
+	std::shared_ptr<const C4HudBarsDef> def;
 	std::vector<C4HudBar> values;
 
-	C4HudBars(std::shared_ptr<C4HudBarsDef> _def) noexcept;
+	C4HudBars(std::shared_ptr<const C4HudBarsDef> _def) noexcept;
 
 	void DrawHudBars(C4Facet &cgo, C4Object &obj) const noexcept;
 	void SetHudBarValue(C4AulContext *cthr, const std::string &name, int32_t value, int32_t max = 0);
@@ -112,7 +112,7 @@ public:
 	float scale; // calculated from gfx.scale
 };
 
-inline C4HudBarDef::Hide operator|(C4HudBarDef::Hide a, C4HudBarDef::Hide b);
+inline const C4HudBarDef::Hide operator|(const C4HudBarDef::Hide a, const C4HudBarDef::Hide b);
 
 
 class C4HudBarsDef
@@ -158,7 +158,7 @@ public:
 namespace std
 {
 	template<>
-	struct hash<C4HudBarsDef>
+	struct hash<const C4HudBarsDef>
 	{
 		std::size_t operator()(const C4HudBarsDef &value) const noexcept;
 	};
@@ -168,21 +168,22 @@ namespace std
 class C4HudBarsUniquifier
 {
 public:
-	std::shared_ptr<C4HudBars> DefaultBars();
-	void RemoveDef(const C4HudBarsDef &def) noexcept;
-
-	std::shared_ptr<C4FacetExID>  GetFacet(const std::function<void(StdStrBuf)> &error, const C4HudBarsDef::Gfxs &gfx, std::string_view file);
-	std::shared_ptr<C4HudBarsDef> UniqueifyDefinition(std::unique_ptr<C4HudBarsDef> definition);
-	std::shared_ptr<C4HudBars>    Instantiate(std::shared_ptr<C4HudBarsDef> definition);
-	std::shared_ptr<C4HudBars>    DefineHudBars(C4AulContext *cthr, C4ValueHash &graphics, const C4ValueArray &definition);
+	std::shared_ptr<C4HudBars>          DefaultBars();
+	std::shared_ptr<C4FacetExID>        GetFacet(const std::function<void(StdStrBuf)> &error, const C4HudBarsDef::Gfxs &gfx, std::string_view file);
+	std::shared_ptr<const C4HudBarsDef> UniqueifyDefinition(std::unique_ptr<C4HudBarsDef> definition);
+	std::shared_ptr<C4HudBars>          Instantiate(std::shared_ptr<const C4HudBarsDef> definition);
+	std::shared_ptr<C4HudBars>          DefineHudBars(C4AulContext *cthr, C4ValueHash &graphics, const C4ValueArray &definition);
 
 private:
 	void ProcessGraphics(C4AulContext *cthr, C4ValueHash &map, C4HudBarsDef::Gfxs &gfx);
 	void ProcessGroup(C4AulContext *cthr, int32_t &value_index, const C4HudBarsDef::Gfxs &graphics, const C4ValueArray &group, C4HudBarsDef::Bars &bars, bool advanceAlways);
 	void ProcessHudBar(C4AulContext *cthr, int32_t &value_index, const C4HudBarsDef::Gfxs &graphics, const C4ValueHash &bar, C4HudBarsDef::Bars &bars, bool advance);
 
-	std::unordered_map<std::string, std::weak_ptr<C4FacetExID>>   graphics;
-	std::unordered_map<C4HudBarsDef, std::weak_ptr<C4HudBarsDef>> definitions;
+  using C4HudBarsDefRef = std::reference_wrapper<const C4HudBarsDef>;
+  using Definitions = std::unordered_map<C4HudBarsDefRef, std::weak_ptr<const C4HudBarsDef>, std::hash<const C4HudBarsDef>, std::equal_to<const C4HudBarsDef>>;
+
+	std::unordered_map<std::string, std::weak_ptr<C4FacetExID>> graphics;
+	Definitions definitions;
 
 	std::shared_ptr<C4HudBars> defaultBars;
 };
