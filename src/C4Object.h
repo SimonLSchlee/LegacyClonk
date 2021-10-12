@@ -259,8 +259,8 @@ public:
 	void CompileFunc(StdCompiler *pComp);
 
 	bool DefineHudBars(C4AulContext *cthr, C4ValueHash *graphics, C4ValueArray *definition);
-	void SetHudBarValue(C4AulContext *cthr, const char* name, int32_t value, int32_t max = 0);
-	void SetHudBarVisibility(C4AulContext *cthr, const char* name, bool fVisible);
+	void SetHudBarValue(C4AulContext *cthr, const char *name, int32_t value, int32_t max = 0);
+	void SetHudBarVisibility(C4AulContext *cthr, const char *name, bool fVisible);
 	void DrawHudBars(C4Facet &cgo);
 
 	void DrawLine(C4FacetEx &cgo);

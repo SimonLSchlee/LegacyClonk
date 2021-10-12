@@ -1727,22 +1727,25 @@ static bool FnSetMenuTextProgress(C4AulContext *cthr, C4ValueInt iNewProgress, C
 
 // Custom Energy Bars
 
-static bool FnDefineHudBars(C4AulContext *cthr, C4ValueHash *pMap, C4ValueArray *pArray, C4Object *pObj)
+static bool FnDefineHudBars(C4AulContext *cthr, C4ValueHash *graphics, C4ValueArray *bars)
 {
-	if (!pObj) pObj = cthr->Obj; if (!pObj) return false;
-	return pObj->DefineHudBars(cthr, pMap, pArray);
+	const auto obj = cthr->Obj;
+	if (!obj) return false;
+	return obj->DefineHudBars(cthr, graphics, bars);
 }
 
-static void FnSetHudBarValue(C4AulContext *cthr, C4String *szName, C4ValueInt iNewValue, C4Object *pObj, C4ValueInt iNewMax)
+static void FnSetHudBarValue(C4AulContext *cthr, C4String *name, C4ValueInt newValue, C4ValueInt newMax)
 {
-	if (!pObj) pObj = cthr->Obj; if (!pObj) return;
-	return pObj->SetHudBarValue(cthr, FnStringPar(szName), iNewValue, iNewMax);
+	const auto obj = cthr->Obj;
+	if (!obj) return;
+	obj->SetHudBarValue(cthr, FnStringPar(name), newValue, newMax);
 }
 
-static void FnSetHudBarVisibility(C4AulContext *cthr, C4String *szName, bool fVisible, C4Object *pObj)
+static void FnSetHudBarVisibility(C4AulContext *cthr, C4String *name, bool visible)
 {
-	if (!pObj) pObj = cthr->Obj; if (!pObj) return;
-	return pObj->SetHudBarVisibility(cthr, FnStringPar(szName), fVisible);
+	const auto obj = cthr->Obj;
+	if (!obj) return;
+	obj->SetHudBarVisibility(cthr, FnStringPar(name), visible);
 }
 
 // Check / Status
@@ -6317,14 +6320,14 @@ static constexpr C4ScriptConstDef C4ScriptConstMap[] =
 	{ "C4MN_Add_ForceCount",  C4V_Int, C4MN_Add_ForceCount },
 	{ "C4MN_Add_ForceNoDesc", C4V_Int, C4MN_Add_ForceNoDesc },
 
-	{ "EBP_None",        C4V_Int, C4HudBarDef::EBP_None },        // HudBar Physical none
-	{ "EBP_Energy",      C4V_Int, C4HudBarDef::EBP_Energy },      // HudBar Physical energy
-	{ "EBP_Magic",       C4V_Int, C4HudBarDef::EBP_Magic },       // HudBar Physical magic
-	{ "EBP_Breath",      C4V_Int, C4HudBarDef::EBP_Breath },      // HudBar Physical breath
-	{ "EBH_Never",       C4V_Int, C4HudBarDef::EBH_Never },       // HudBar Hide never
-	{ "EBH_Empty",       C4V_Int, C4HudBarDef::EBH_Empty },       // HudBar Hide empty
-	{ "EBH_Full",        C4V_Int, C4HudBarDef::EBH_Full },        // HudBar Hide full
-	{ "EBH_HideHUDBars", C4V_Int, C4HudBarDef::EBH_HideHUDBars }, // HudBar HideHUDBars if not given ignores C4Def::HB_Energy etc.
+	{ "EBP_None",        C4V_Int, C4HudBarDef::EBP_None },
+	{ "EBP_Energy",      C4V_Int, C4HudBarDef::EBP_Energy },
+	{ "EBP_Magic",       C4V_Int, C4HudBarDef::EBP_Magic },
+	{ "EBP_Breath",      C4V_Int, C4HudBarDef::EBP_Breath },
+	{ "EBH_Never",       C4V_Int, C4HudBarDef::EBH_Never },
+	{ "EBH_Empty",       C4V_Int, C4HudBarDef::EBH_Empty },
+	{ "EBH_Full",        C4V_Int, C4HudBarDef::EBH_Full },
+	{ "EBH_HideHUDBars", C4V_Int, C4HudBarDef::EBH_HideHUDBars },
 
 	{ "FX_OK",                  C4V_Int, C4Fx_OK }, // generic standard behaviour for all effect callbacks
 	{ "FX_Effect_Deny",         C4V_Int, C4Fx_Effect_Deny }, // delete effect
