@@ -485,7 +485,7 @@ void C4HudBarsUniquifier::ProcessGraphics(C4AulContext *cthr, C4ValueHash &map, 
 		const auto &m = *val.GetRefVal()._getMap();
 
 		C4Value file = m[keyFile];
-		const auto _file = file != C4VNull ? file.getStr()->Data.getData() : _key;
+		const auto _file = file ? file.getStr()->Data.getData() : _key;
 
 		// TODO: Check Type and const?
 		auto _amount = m[keyAmount];
@@ -574,7 +574,7 @@ void C4HudBarsUniquifier::ProcessHudBar(C4AulContext *cthr, std::int32_t &value_
 
 	C4Value hide = bar[C4VString("hide")];
 	auto _hide = C4HudBarDef::EBH_Empty;
-	if (hide != C4VNull) _hide = static_cast<C4HudBarDef::Hide>(hide.getInt());
+	if (hide) _hide = static_cast<C4HudBarDef::Hide>(hide.getInt());
 	if (_hide & ~C4HudBarDef::EBH_All) error("hide", hide);
 
 	C4Value index = bar[C4VString("index")];
@@ -608,7 +608,7 @@ void C4HudBarsUniquifier::ProcessHudBar(C4AulContext *cthr, std::int32_t &value_
 		const auto facet = GetFacet(facetError, graphics, file);
 
 		C4HudBarDef bar{_name->Data.getData(), file, facet, _index, _physical};
-		if (physical != C4VNull)
+		if (physical)
 		{
 			bar.physical = _physical;
 			bar.hide = C4HudBarDef::DefaultHide(_physical);
@@ -617,7 +617,7 @@ void C4HudBarsUniquifier::ProcessHudBar(C4AulContext *cthr, std::int32_t &value_
 		{
 			bar.value_index = value_index++;
 		}
-		if (hide != C4VNull) bar.hide = _hide;
+		if (hide) bar.hide = _hide;
 		bar.value = _value;
 		bar.max = _max;
 		bar.visible = _visible;
