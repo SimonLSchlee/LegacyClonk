@@ -871,7 +871,7 @@ bool C4Object::ExecLife()
 						C4AulFunc *pMagicEnergyFn = Game.ScriptEngine.GetFuncRecursive(PSF_DoMagicEnergy);
 						if (pMagicEnergyFn) // should always be true
 						{
-							if (!!pMagicEnergyFn->Exec(nullptr, {C4VInt(-transfer), C4VObj(Contained)}))
+							if (pMagicEnergyFn->Exec(nullptr, {C4VInt(-transfer), C4VObj(Contained)}))
 							{
 								pMagicEnergyFn->Exec(nullptr, {C4VInt(+transfer), C4VObj(this)});
 							}
@@ -1548,14 +1548,14 @@ bool C4Object::Enter(C4Object *pTarget, bool fCalls, bool fCopyMotion, bool *pfR
 	// No target or target is self
 	if (!pTarget || (pTarget == this)) return false;
 	// check if entrance is allowed
-	if (!!Call(PSF_RejectEntrance, {C4VObj(pTarget)})) return false;
+	if (Call(PSF_RejectEntrance, {C4VObj(pTarget)})) return false;
 	// check if we end up in an endless container-recursion
 	for (C4Object *pCnt = pTarget->Contained; pCnt; pCnt = pCnt->Contained)
 		if (pCnt == this) return false;
 	// Check RejectCollect, if desired
 	if (pfRejectCollect)
 	{
-		if (!!pTarget->Call(PSF_RejectCollection, {C4VID(Def->id), C4VObj(this)}))
+		if (pTarget->Call(PSF_RejectCollection, {C4VID(Def->id), C4VObj(this)}))
 		{
 			*pfRejectCollect = true;
 			return false;
@@ -1637,7 +1637,7 @@ bool C4Object::ActivateEntrance(int32_t by_plr, C4Object *by_obj)
 	}
 	// Try entrance activation
 	if (OCF & OCF_Entrance)
-		if (!!Call(PSF_ActivateEntrance, {C4VObj(by_obj)}))
+		if (Call(PSF_ActivateEntrance, {C4VObj(by_obj)}))
 			return true;
 	// Failure
 	return false;
@@ -1876,7 +1876,7 @@ bool C4Object::ActivateMenu(int32_t iMenu, int32_t iMenuSelect,
 		// No target specified: use own container as target
 		if (!pTarget) if (!(pTarget = Contained)) break;
 		// Opening contents menu blocked by RejectContents
-		if (!!pTarget->Call(PSF_RejectContents)) return false;
+		if (pTarget->Call(PSF_RejectContents)) return false;
 		// Create symbol
 		fctSymbol.Create(C4SymbolSize, C4SymbolSize);
 		pTarget->Def->Draw(fctSymbol, false, pTarget->Color, pTarget);
@@ -1919,7 +1919,7 @@ bool C4Object::ActivateMenu(int32_t iMenu, int32_t iMenuSelect,
 		// No target specified
 		if (!pTarget) break;
 		// Opening contents menu blocked by RejectContents
-		if (!!pTarget->Call(PSF_RejectContents)) return false;
+		if (pTarget->Call(PSF_RejectContents)) return false;
 		// Create symbol & init
 		fctSymbol.Create(C4SymbolSize, C4SymbolSize);
 		pTarget->Def->Draw(fctSymbol, false, pTarget->Color, pTarget);
@@ -3239,7 +3239,7 @@ bool C4Object::ContainedControl(uint8_t byCom)
 	C4Player *pPlr = Game.Players.Get(Controller);
 	if (fCallSfEarly)
 	{
-		if (sf && !!sf->Exec(Contained, {C4VObj(this)})) result = true;
+		if (sf && sf->Exec(Contained, {C4VObj(this)})) result = true;
 		// AutoStopControl: Also notify container about controlupdate
 		// Note Contained may be nulled now due to ContainedControl call
 		if (Contained && !(byCom & (COM_Single | COM_Double)) && pPlr->ControlStyle)
@@ -3302,7 +3302,7 @@ bool C4Object::CallControl(C4Player *pPlr, uint8_t byCom, const C4AulParSet &pPa
 {
 	assert(pPlr);
 
-	bool result = !!Call(FormatString(PSF_Control, ComName(byCom)).getData(), pPars);
+	bool result = static_cast<bool>(Call(FormatString(PSF_Control, ComName(byCom)).getData(), pPars));
 
 	// Call ControlUpdate when using Jump'n'Run control
 	if (pPlr->ControlStyle)
@@ -3721,7 +3721,7 @@ bool C4Object::MenuCommand(const char *szCommand)
 {
 	// Native script execution
 	if (!Def || !Status) return false;
-	return !!Def->Script.DirectExec(this, szCommand, "MenuCommand", false, Def->Script.Strict);
+	return static_cast<bool>(Def->Script.DirectExec(this, szCommand, "MenuCommand", false, Def->Script.Strict));
 }
 
 C4Object *C4Object::ComposeContents(C4ID id)
@@ -3910,7 +3910,7 @@ void C4Object::SetCommand(int32_t iCommand, C4Object *pTarget, C4Value iTx, int3
 		if (!CloseMenu(false)) return;
 	// Script overload
 	if (fControl)
-		if (!!Call(PSF_ControlCommand, {C4VString(CommandName(iCommand)),
+		if (Call(PSF_ControlCommand, {C4VString(CommandName(iCommand)),
 			C4VObj(pTarget),
 			iTx,
 			C4VInt(iTy),
@@ -3922,7 +3922,7 @@ void C4Object::SetCommand(int32_t iCommand, C4Object *pTarget, C4Value iTx, int3
 		if (Contained->Def->VehicleControl & C4D_VehicleControl_Inside)
 		{
 			Contained->Controller = Controller;
-			if (!!Contained->Call(PSF_ControlCommand, {C4VString(CommandName(iCommand)),
+			if (Contained->Call(PSF_ControlCommand, {C4VString(CommandName(iCommand)),
 				C4VObj(pTarget),
 				iTx,
 				C4VInt(iTy),
@@ -3936,7 +3936,7 @@ void C4Object::SetCommand(int32_t iCommand, C4Object *pTarget, C4Value iTx, int3
 		if (Action.Target) if (Action.Target->Def->VehicleControl & C4D_VehicleControl_Outside)
 		{
 			Action.Target->Controller = Controller;
-			if (!!Action.Target->Call(PSF_ControlCommand, {C4VString(CommandName(iCommand)),
+			if (Action.Target->Call(PSF_ControlCommand, {C4VString(CommandName(iCommand)),
 				C4VObj(pTarget),
 				iTx,
 				C4VInt(iTy),
@@ -5749,7 +5749,7 @@ void C4Object::DirectComContents(C4Object *pTarget, bool fDoCalls)
 	if (Contents.GetObject() == pTarget) return;
 	// select object via script?
 	if (fDoCalls)
-		if (!!Call("~ControlContents", {C4VID(pTarget->id)}))
+		if (Call("~ControlContents", {C4VID(pTarget->id)}))
 			return;
 	// default action
 	if (!(Contents.ShiftContents(pTarget))) return;
