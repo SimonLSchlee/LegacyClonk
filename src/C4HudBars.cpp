@@ -344,7 +344,7 @@ std::shared_ptr<C4HudBars> C4HudBarsUniquifier::DefaultBars()
 	{
 		constexpr auto file = "EnergyBars";
 		C4HudBarsDef::Gfxs gfxs{{file, C4HudBarsDef::Gfx{file, file, 3, 100}}};
-		const auto gfx = GetFacet([](StdStrBuf msg) { LogFatal(FormatString("could not load DefaultBars \"%s\"", file).getData()); }, gfxs, file);
+		const auto gfx = GetFacet([file](StdStrBuf msg) { LogFatal(FormatString("could not load DefaultBars \"%s\"", file).getData()); }, gfxs, file);
 		const auto def = UniqueifyDefinition
 		(
 			std::make_unique<C4HudBarsDef>
