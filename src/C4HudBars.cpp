@@ -344,7 +344,7 @@ std::shared_ptr<C4HudBars> C4HudBarsUniquifier::DefaultBars()
 	{
 		constexpr auto file = "EnergyBars";
 		C4HudBarsDef::Gfxs gfxs{{file, C4HudBarsDef::Gfx{file, file, 3, 100}}};
-		const auto gfx = GetFacet([file](StdStrBuf msg) { LogFatal(FormatString("could not load DefaultBars \"%s\"", file).getData()); }, gfxs, file);
+		const auto gfx = GetFacet([file](StdStrBuf msg) { LogFatal(FormatString("could not load default hud bars \"%s\"", file).getData()); }, gfxs, file);
 		const auto def = UniqueifyDefinition
 		(
 			std::make_unique<C4HudBarsDef>
@@ -396,7 +396,6 @@ std::shared_ptr<C4FacetExID> C4HudBarsUniquifier::GetFacet(const std::function<v
 		return nullptr;
 	}
 
-	// TODO FIXME why wasn't this already called before we get here?
 	Game.GraphicsResource.RegisterMainGroups();
 
 	const auto deleter = [this, key](C4FacetExID *facet)
@@ -408,7 +407,7 @@ std::shared_ptr<C4FacetExID> C4HudBarsUniquifier::GetFacet(const std::function<v
 	const bool success{Game.GraphicsResource.LoadFile(*facet, file.c_str(), Game.GraphicsResource.Files)};
 	if(!success)
 	{
-		error(FormatString("could not load custom energy bar graphic \"%s\"", file.c_str()));
+		error(FormatString("could not load hud bar graphic \"%s\"", file.c_str()));
 		return nullptr;
 	}
 
@@ -603,7 +602,7 @@ void C4HudBarsUniquifier::ProcessHudBar(C4AulContext *cthr, std::int32_t &value_
 		const auto file = _gfx->Data.getData();
 		const auto facetError = [cthr, _name](StdStrBuf msg)
 		{
-			throw C4AulExecError{cthr->Obj, FormatString("DefineHudBars %s %s", _name->Data.getData(), msg.getData()).getData()};
+			throw C4AulExecError{cthr->Obj, FormatString("DefineHudBars: HudBar \"%s\" %s", _name->Data.getData(), msg.getData()).getData()};
 		};
 		const auto facet = GetFacet(facetError, graphics, file);
 

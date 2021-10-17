@@ -73,7 +73,6 @@ public:
 	C4FacetExID fctHand;
 	C4FacetExID fctGamepad;
 	C4FacetExID fctBuild;
-	C4FacetExID fctEnergyBars;
 	C4Facet fctCursor;
 	C4Facet fctDropTarget;
 	C4Facet fctInsideSymbol;
