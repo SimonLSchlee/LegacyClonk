@@ -396,6 +396,7 @@ std::shared_ptr<C4FacetExID> C4HudBarsUniquifier::GetFacet(const std::function<v
 		return nullptr;
 	}
 
+	Game.GraphicsResource.RegisterGlobalGraphics();
 	Game.GraphicsResource.RegisterMainGroups();
 
 	const auto deleter = [this, key](C4FacetExID *facet)

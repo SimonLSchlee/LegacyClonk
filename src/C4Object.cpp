@@ -148,7 +148,7 @@ void C4Object::Default()
 	FirstRef = nullptr;
 	pGfxOverlay = nullptr;
 	iLastAttachMovementFrame = -1;
-	hudBars = Game.HudBars.DefaultBars();
+	hudBars = nullptr;
 }
 
 bool C4Object::Init(C4Def *pDef, C4Object *pCreator,
@@ -219,6 +219,9 @@ bool C4Object::Init(C4Def *pDef, C4Object *pCreator,
 
 	// local named vars
 	LocalNamed.SetNameList(&pDef->Script.LocalNamed);
+
+  // default hud bars
+	hudBars = Game.HudBars.DefaultBars();
 
 	// finished initializing
 	Initializing = false;
